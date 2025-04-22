@@ -9,16 +9,21 @@ const sosAlertSchema = new mongoose.Schema({
   doctorId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    default: null
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
+  caregiverId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
   },
   status: {
     type: String,
     enum: ['active', 'resolved'],
     default: 'active'
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
 });
 

@@ -8,6 +8,11 @@ const userSchema = new Schema({
     role: { type: String, enum: ['patient', 'caregiver', 'doctor']},
     patientId: { type: String, sparse: true }, 
     specialty: { type: String },
+    condition: { 
+        type: String, 
+        enum: ['Stable', 'Critical', 'Recovering', 'Under Observation'], 
+        default: 'Stable' 
+    }
 });
 
 userSchema.pre('save', async function (next) {

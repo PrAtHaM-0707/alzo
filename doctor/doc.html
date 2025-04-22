@@ -41,6 +41,21 @@
             margin: 0;
         }
         .disabled-input { pointer-events: none; opacity: 0.5; }
+        .condition-select {
+            appearance: none;
+            background-color: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 4px 8px;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #374151;
+        }
+        .condition-select:focus {
+            outline: none;
+            border-color: #57B5E7;
+            box-shadow: 0 0 0 2px rgba(87, 181, 231, 0.3);
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen flex">
@@ -78,11 +93,11 @@
                     </div>
                     <span class="text-sm text-gray-600">Videos</span>
                 </button>
-                <button id="emergencyNav" class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
+                <button id="profileNav" class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
                     <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                        <i class="ri-alarm-warning-line text-lg text-gray-600"></i>
+                        <i class="ri-user-settings-line text-lg text-gray-600"></i>
                     </div>
-                    <span class="text-sm text-gray-600">Emergency</span>
+                    <span class="text-sm text-gray-600">Profile</span>
                 </button>
                 <button id="logoutButton" class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
                     <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
@@ -128,7 +143,7 @@
                 <div class="card">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm text-gray-500">Today's Appointments</p>
+                            <p class="text-sm text-gray-500">Today’s Appointments</p>
                             <p class="text-2xl font-semibold mt-1" id="totalAppointments">0</p>
                         </div>
                         <div class="w-10 h-10 flex items-center justify-center bg-primary bg-opacity-10 text-primary rounded">
@@ -265,11 +280,38 @@
             </div>
         </div>
 
-        <div id="emergencySection" class="hidden">
+        <div id="profileSection" class="hidden">
             <div class="card">
-                <h3 class="font-semibold mb-4">Emergency Alerts</h3>
-                <div id="sosFeedback" class="text-center text-sm mb-4 hidden"></div>
-                <div id="sosAlertsList" class="divide-y"></div>
+                <h3 class="font-semibold mb-4">Doctor Profile</h3>
+                <form id="profileForm">
+                    <div class="mb-4">
+                        <label for="profileName" class="block text-gray-700 font-medium mb-2 text-sm">Name</label>
+                        <input type="text" id="profileName" name="name" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary" required />
+                    </div>
+                    <div class="mb-4">
+                        <label for="profileEmail" class="block text-gray-700 font-medium mb-2 text-sm">Email</label>
+                        <input type="email" id="profileEmail" name="email" class="w-full px-4 py-3 rounded-md border border-gray-300 bg-gray-100 disabled-input" readonly />
+                    </div>
+                    <div class="mb-4">
+                        <label for="profileSpecialty" class="block text-gray-700 font-medium mb-2 text-sm">Specialty</label>
+                        <input type="text" id="profileSpecialty" name="specialty" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary" />
+                    </div>
+                    <div id="profileError" class="text-red-500 text-center text-sm mb-4 hidden"></div>
+                    <button type="submit" id="updateProfileButton" class="w-full bg-primary text-white py-3 rounded-button font-semibold hover:bg-primary/90">Update Profile</button>
+                </form>
+                <form id="passwordForm" class="mt-6">
+                    <h3 class="font-semibold mb-4">Change Password</h3>
+                    <div class="mb-4">
+                        <label for="currentPassword" class="block text-gray-700 font-medium mb-2 text-sm">Current Password</label>
+                        <input type="password" id="currentPassword" name="currentPassword" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary" required />
+                    </div>
+                    <div class="mb-4">
+                        <label for="newPassword" class="block text-gray-700 font-medium mb-2 text-sm">New Password</label>
+                        <input type="password" id="newPassword" name="newPassword" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary" required />
+                    </div>
+                    <div id="passwordError" class="text-red-500 text-center text-sm mb-4 hidden"></div>
+                    <button type="submit" id="changePasswordButton" class="w-full bg-primary text-white py-3 rounded-button font-semibold hover:bg-primary/90">Change Password</button>
+                </form>
             </div>
         </div>
     </div>
@@ -359,10 +401,12 @@
                             </div>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <span class="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full">Stable</span>
-                            <button class="w-8 h-8 flex items-center justify-center rounded-button hover:bg-gray-100 disabled-link" title="Coming soon">
-                                <i class="ri-more-2-fill"></i>
-                            </button>
+                            <select onchange="updatePatientCondition('${patient._id}', this.value)" class="condition-select">
+                                <option value="Stable" ${patient.condition === 'Stable' ? 'selected' : ''}>Stable</option>
+                                <option value="Critical" ${patient.condition === 'Critical' ? 'selected' : ''}>Critical</option>
+                                <option value="Recovering" ${patient.condition === 'Recovering' ? 'selected' : ''}>Recovering</option>
+                                <option value="Under Observation" ${patient.condition === 'Under Observation' ? 'selected' : ''}>Under Observation</option>
+                            </select>
                         </div>
                     </div>
                 `).join('');
@@ -385,7 +429,7 @@
                 const appointments = await appointmentsResponse.json();
                 const appointmentsList = document.getElementById('appointmentsList');
                 const allAppointmentsList = document.getElementById('allAppointmentsList');
-                const appointmentHtml = appointments.map(appointment => `
+                const appointmentHtml = appointments.length > 0 ? appointments.map(appointment => `
                     <div class="p-4 flex items-center justify-between hover:bg-gray-50">
                         <div>
                             <p class="font-medium">${appointment.patientId.name}</p>
@@ -400,7 +444,7 @@
                             ` : ''}
                         </div>
                     </div>
-                `).join('');
+                `).join('') : '<p class="p-4 text-sm text-gray-500">No appointments available.</p>';
                 appointmentsList.innerHTML = appointmentHtml;
                 allAppointmentsList.innerHTML = appointmentHtml;
             } catch (err) {
@@ -431,6 +475,46 @@
             } catch (err) {
                 console.error('SOS alerts error:', err.message);
                 document.getElementById('sosAlertsList').innerHTML = `<p class="text-sm text-red-500">${err.message || 'Failed to load SOS alerts.'}</p>`;
+            }
+
+            // Load profile data
+            try {
+                const profileResponse = await fetch('/api/auth/doctor/profile', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (!profileResponse.ok) {
+                    const errorData = await profileResponse.json();
+                    throw new Error(errorData.message || 'Failed to fetch profile');
+                }
+                const profile = await profileResponse.json();
+                document.getElementById('profileName').value = profile.name;
+                document.getElementById('profileEmail').value = profile.email;
+                document.getElementById('profileSpecialty').value = profile.specialty || '';
+            } catch (err) {
+                console.error('Profile error:', err.message);
+                document.getElementById('profileError').textContent = err.message || 'Failed to load profile.';
+                document.getElementById('profileError').classList.remove('hidden');
+            }
+        }
+
+        async function updatePatientCondition(patientId, condition) {
+            try {
+                const response = await fetch(`/api/auth/doctor/patients/${patientId}/condition`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({ condition })
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to update condition');
+                }
+                console.log(`Patient ${patientId} condition updated to ${condition}`);
+            } catch (err) {
+                console.error('Update condition error:', err.message);
+                alert(err.message || 'Failed to update condition.');
             }
         }
 
@@ -568,6 +652,87 @@
             }
         }
 
+        async function handleUpdateProfile(e) {
+            e.preventDefault();
+            const form = e.target;
+            const button = document.getElementById('updateProfileButton');
+            const errorMessage = document.getElementById('profileError');
+            errorMessage.classList.add('hidden');
+            button.textContent = 'Updating...';
+            button.disabled = true;
+            try {
+                const response = await fetch('/api/auth/doctor/profile', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        name: form.name.value.trim(),
+                        specialty: form.specialty.value.trim()
+                    })
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to update profile');
+                }
+                console.log('Profile updated');
+                document.getElementById('doctorName').textContent = `Dr. ${form.name.value.trim()}`;
+                document.getElementById('doctorSpecialty').textContent = form.specialty.value.trim() || 'Specialty not set';
+                button.textContent = 'Updated!';
+                setTimeout(() => {
+                    button.textContent = 'Update Profile';
+                    button.disabled = false;
+                }, 1000);
+            } catch (err) {
+                console.error('Update profile error:', err.message);
+                errorMessage.textContent = err.message || 'An error occurred. Please try again.';
+                errorMessage.classList.remove('hidden');
+                button.textContent = 'Update Profile';
+                button.disabled = false;
+            }
+        }
+
+        async function handleChangePassword(e) {
+            e.preventDefault();
+            const form = e.target;
+            const button = document.getElementById('changePasswordButton');
+            const errorMessage = document.getElementById('passwordError');
+            errorMessage.classList.add('hidden');
+            button.textContent = 'Changing...';
+            button.disabled = true;
+            try {
+                const response = await fetch('/api/auth/doctor/change-password', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        currentPassword: form.currentPassword.value,
+                        newPassword: form.newPassword.value
+                    })
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to change password');
+                }
+                console.log('Password changed');
+                form.reset();
+                button.textContent = 'Changed!';
+                setTimeout(() => {
+                    button.textContent = 'Change Password';
+                    button.disabled = false;
+                }, 1000);
+            } catch (err) {
+                console.error('Change password error:', err.message);
+                errorMessage.textContent = err.message || 'An error occurred. Please try again.';
+                errorMessage.classList.remove('hidden');
+                button.textContent = 'Change Password';
+                button.disabled = false;
+            }
+        }
+
         function handleLogout() {
             console.log('Logging out');
             localStorage.removeItem('token');
@@ -575,10 +740,11 @@
         }
 
         function toggleSection(sectionId) {
-            const sections = ['dashboardSection', 'patientsSection', 'appointmentsSection', 'medicationsSection', 'videosSection', 'emergencySection'];
-            const navs = ['dashboardNav', 'patientsNav', 'appointmentsNav', 'medicationsNav', 'videosNav', 'emergencyNav'];
+            const sections = ['dashboardSection', 'patientsSection', 'appointmentsSection', 'medicationsSection', 'videosSection', 'profileSection'];
+            const navs = ['dashboardNav', 'patientsNav', 'appointmentsNav', 'medicationsNav', 'videosNav', 'profileNav'];
             sections.forEach(section => {
-                document.getElementById(section).classList.add('hidden');
+                const element = document.getElementById(section);
+                if (element) element.classList.add('hidden');
             });
             navs.forEach(nav => {
                 const navElement = document.getElementById(nav);
@@ -635,9 +801,11 @@
             document.getElementById('appointmentsNav').addEventListener('click', () => toggleSection('appointmentsSection'));
             document.getElementById('medicationsNav').addEventListener('click', () => toggleSection('medicationsSection'));
             document.getElementById('videosNav').addEventListener('click', () => toggleSection('videosSection'));
-            document.getElementById('emergencyNav').addEventListener('click', () => toggleSection('emergencySection'));
+            document.getElementById('profileNav').addEventListener('click', () => toggleSection('profileSection'));
             document.getElementById('medicationForm').addEventListener('submit', handleAddMedication);
             document.getElementById('videoForm').addEventListener('submit', handleAddVideo);
+            document.getElementById('profileForm').addEventListener('submit', handleUpdateProfile);
+            document.getElementById('passwordForm').addEventListener('submit', handleChangePassword);
         });
     </script>
 </body>

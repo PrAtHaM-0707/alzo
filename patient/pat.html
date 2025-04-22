@@ -50,23 +50,11 @@
                     </div>
                     <span class="text-sm text-primary font-medium">Home</span>
                 </a>
-                <button class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left disabled-link" title="Coming soon">
+                <button class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left" title="Coming soon">
                     <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
                         <i class="ri-brain-line text-lg text-gray-600"></i>
                     </div>
                     <span class="text-sm text-gray-600">Tests</span>
-                </button>
-                <button class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left disabled-link" title="Coming soon">
-                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                        <i class="ri-medicine-bottle-line text-lg text-gray-600"></i>
-                    </div>
-                    <span class="text-sm text-gray-600">Medications</span>
-                </button>
-                <button class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left disabled-link" title="Coming soon">
-                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                        <i class="ri-video-line text-lg text-gray-600"></i>
-                    </div>
-                    <span class="text-sm text-gray-600">Videos</span>
                 </button>
                 <a href="/patient/appointments.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg" title="Coming soon">
                     <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
@@ -74,18 +62,12 @@
                     </div>
                     <span class="text-sm text-gray-600">Appointments</span>
                 </a>
-                <button onclick="sendSosAlert()" class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
+                <a href="/patient/profile.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg">
                     <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                        <i class="ri-alarm-warning-line text-lg text-gray-600"></i>
+                        <i class="ri-user-settings-line text-lg text-gray-600"></i>
                     </div>
-                    <span class="text-sm text-gray-600">Emergency</span>
-                </button>
-                <!-- <a href="/patient/settings.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg " title="Coming soon">
-                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                        <i class="ri-settings-line text-lg text-gray-600"></i>
-                    </div>
-                    <span class="text-sm text-gray-600">Settings</span>
-                </a> -->
+                    <span class="text-sm text-gray-600">Profile</span>
+                </a>
                 <button id="logoutButton" class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
                     <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
                         <i class="ri-logout-box-line text-lg text-gray-600"></i>
@@ -125,7 +107,7 @@
             </div>
             <div class="card">
                 <h2 class="text-lg font-semibold mb-4">Educational Videos</h2>
-                <div id="videoList" class="space-y-2"></div>
+                <div id="videoList" class="grid grid-cols-1 gap-4"></div>
             </div>
             <div class="card">
                 <h2 class="text-lg font-semibold mb-4">Location Tracking</h2>
@@ -236,13 +218,17 @@
                 }
                 const videos = await response.json();
                 const videoList = document.getElementById('videoList');
-                videoList.innerHTML = videos.length ? videos.map(video => `
-                    <div class="p-2 bg-white rounded-md">
-                        <p class="text-sm font-medium">${video.title}</p>
-                        <p class="text-xs text-gray-500">${video.description || 'No description'}</p>
-                        <a href="${video.url}" target="_blank" class="text-sm text-primary hover:underline">Watch Video</a>
-                    </div>
-                `).join('') : '<p class="text-sm text-gray-500">No videos available.</p>';
+                videoList.innerHTML = videos.length
+                    ? videos.map(video => `
+                        <div class="p-4 bg-white rounded-lg shadow-md flex items-start space-x-4">
+                            <div class="flex-1">
+                                <h3 class="text-lg font-semibold text-gray-900">${video.title}</h3>
+                                <p class="text-sm text-gray-600 mb-2">${video.description || 'No description available'}</p>
+                                <a href="${video.url}" target="_blank" class="text-sm text-primary font-medium hover:underline">Watch Video</a>
+                            </div>
+                        </div>
+                    `).join('')
+                    : '<p class="text-sm text-gray-500 font-medium">No educational videos are currently available for you.</p>';
             } catch (err) {
                 console.error('Load videos error:', err.message);
                 document.getElementById('videoList').innerHTML = `<p class="text-sm text-red-500">${err.message || 'Failed to load videos.'}</p>`;
