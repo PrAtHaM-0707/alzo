@@ -1,0 +1,2348 @@
+const { Schema, model } = require('mongoose');
+const { nanoid } = require('nanoid');
+
+const userSchema = new Schema({
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    role: { type: String, enum: ['patient', 'caregiver', 'doctor'], default: 'patient' },
+    patientId: { type: String, sparse: true }, 
+    specialty: { type: String },
+});
+
+userSchema.pre('save', async function (next) {
+    if (this.isNew && this.role === 'patient' && !this.patientId) {
+        this.patientId = nanoid();
+    }
+    next();
+});
+
+module.exports = model('User', userSchema);
+
+this is User.js
+
+----------------------
+
+const express = require('express');
+const jwt = require('jsonwebtoken');
+const { body, validationResult } = require('express-validator');
+const { customAlphabet } = require('nanoid');
+const User = require('../models/User');
+const Medication = require('../models/Medication');
+const Video = require('../models/Video');
+const Appointment = require('../models/Appointment');
+const SosAlert = require('../models/SosAlert');
+
+const router = express.Router();
+
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) {
+    console.log('No token provided in request');
+    return res.status(401).json({ message: 'Access token required' });
+  }
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded.user;
+    console.log('Token verified, user ID:', req.user.id);
+    next();
+  } catch (err) {
+    console.error('Token verification failed:', err.message);
+    return res.status(403).json({ message: 'Invalid or expired token' });
+  }
+};
+
+const nanoid = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 8);
+
+// Signup
+router.post(
+  '/signup',
+  [
+    body('name').notEmpty().withMessage('Name is required'),
+    body('email').isEmail().withMessage('Valid email is required'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log('Signup validation errors:', errors.array());
+      return res.status(400).json({ message: errors.array()[0].msg });
+    }
+    const { name, email, password } = req.body;
+    console.log('Signup request:', { name, email: email.toLowerCase() });
+    try {
+      const existingUser = await User.findOne({ email: email.toLowerCase() });
+      if (existingUser) {
+        console.log('User already exists:', email.toLowerCase());
+        return res.status(400).json({ message: 'User already exists' });
+      }
+      const newUser = new User({
+        name,
+        email: email.toLowerCase(),
+        password,
+      });
+      await newUser.save();
+      console.log('User created:', newUser.email);
+      const payload = { user: { id: newUser.id } };
+      const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+      res.status(201).json({ token, message: 'User created successfully' });
+    } catch (err) {
+      console.error('Signup error:', err.message);
+      res.status(500).json({ message: 'Server error', error: err.message });
+    }
+  }
+);
+
+// Login
+router.post(
+  '/login',
+  [
+    body('email').isEmail().withMessage('Valid email is required'),
+    body('password').notEmpty().withMessage('Password is required'),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log('Login validation errors:', errors.array());
+      return res.status(400).json({ message: errors.array()[0].msg });
+    }
+    const { email, password } = req.body;
+    const normalizedEmail = email.trim().toLowerCase();
+    console.log('Login attempt for email:', normalizedEmail);
+    try {
+      const user = await User.findOne({ email: normalizedEmail });
+      if (!user) {
+        console.log('User not found:', normalizedEmail);
+        return res.status(400).json({ message: 'Invalid credentials' });
+      }
+      const isMatch = password === user.password;
+      if (!isMatch) {
+        console.log('Password mismatch for email:', normalizedEmail);
+        return res.status(400).json({ message: 'Invalid credentials' });
+      }
+      console.log('Login successful for email:', user.email);
+      const payload = { user: { id: user.id } };
+      const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+      let redirectUrl = '/role';
+      if (user.role) {
+        switch (user.role) {
+          case 'patient':
+            redirectUrl = '/patient/pat.html';
+            break;
+          case 'caregiver':
+            redirectUrl = '/caregiver/care.html';
+            break;
+          case 'doctor':
+            redirectUrl = '/doctor/doc.html';
+            break;
+        }
+      }
+      console.log(`Redirecting to ${redirectUrl} for role ${user.role || 'none'}`);
+      res.json({ token, redirect: redirectUrl });
+    } catch (err) {
+      console.error('Login error:', err.message);
+      res.status(500).json({ message: 'Server error', error: err.message });
+    }
+  }
+);
+
+// Get user data
+router.get('/me', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      console.log('User not found for ID:', req.user.id);
+      return res.status(404).json({ message: 'User not found' });
+    }
+    console.log('User fetched:', user.email);
+    res.json({
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      patientId: user.patientId || null,
+      sosNumber: user.sosNumber || null,
+      specialty: user.specialty || null
+    });
+  } catch (err) {
+    console.error('Get user error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Select role
+router.post('/select-role', authenticateToken, async (req, res) => {
+  const { role } = req.body;
+  if (!['patient', 'caregiver', 'doctor'].includes(role)) {
+    console.log('Invalid role selected:', role);
+    return res.status(400).json({ message: 'Invalid role' });
+  }
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      console.log('User not found for ID:', req.user.id);
+      return res.status(404).json({ message: 'User not found' });
+    }
+    user.role = role;
+    if (role === 'patient') {
+      if (!user.patientId) {
+        user.patientId = nanoid();
+        console.log('Generated patientId:', user.patientId);
+      }
+    } else {
+      user.patientId = null;
+    }
+    await user.save();
+    console.log('Role updated:', { email: user.email, role });
+    res.json({ message: 'Role updated successfully', role, patientId: user.patientId });
+  } catch (err) {
+    console.error('Select role error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Update name
+router.patch(
+  '/update-name',
+  authenticateToken,
+  [body('name').notEmpty().withMessage('Name is required')],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log('Update name validation errors:', errors.array());
+      return res.status(400).json({ message: errors.array()[0].msg });
+    }
+    const { name } = req.body;
+    console.log('Update name request:', { userId: req.user.id, name });
+    try {
+      const user = await User.findById(req.user.id);
+      if (!user) {
+        console.log('User not found for ID:', req.user.id);
+        return res.status(404).json({ message: 'User not found' });
+      }
+      user.name = name;
+      await user.save();
+      console.log('Name updated:', { email: user.email, name });
+      res.json({ message: 'Name updated successfully', name });
+    } catch (err) {
+      console.error('Update name error:', err.message);
+      res.status(500).json({ message: 'Server error', error: err.message });
+    }
+  }
+);
+
+// Update SOS number
+router.patch(
+  '/update-sos',
+  authenticateToken,
+  [body('sosNumber').matches(/^\+?[1-9]\d{1,14}$/).withMessage('Invalid phone number')],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log('Update SOS validation errors:', errors.array());
+      return res.status(400).json({ message: errors.array()[0].msg });
+    }
+    const { sosNumber } = req.body;
+    console.log('Update SOS request:', { userId: req.user.id, sosNumber });
+    try {
+      const user = await User.findById(req.user.id);
+      if (!user) {
+        console.log('User not found for ID:', req.user.id);
+        return res.status(404).json({ message: 'User not found' });
+      }
+      user.sosNumber = sosNumber;
+      await user.save();
+      console.log('SOS number updated:', { email: user.email, sosNumber });
+      res.json({ message: 'SOS number updated successfully', sosNumber });
+    } catch (err) {
+      console.error('Update SOS error:', err.message);
+      res.status(500).json({ message: 'Server error', error: err.message });
+    }
+  }
+);
+
+// Get doctor profile
+router.get('/doctor/profile', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('name email specialty');
+    if (user.role !== 'doctor') {
+      console.log('Unauthorized access to doctor profile:', user.email);
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    console.log('Doctor profile fetched:', user.email);
+    res.json({ name: user.name, email: user.email, specialty: user.specialty || '' });
+  } catch (err) {
+    console.error('Get doctor profile error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Update doctor profile
+router.patch(
+  '/doctor/profile',
+  authenticateToken,
+  [
+    body('name').notEmpty().withMessage('Name is required'),
+    body('specialty').optional().isString().withMessage('Specialty must be a string')
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log('Update doctor profile validation errors:', errors.array());
+      return res.status(400).json({ message: errors.array()[0].msg });
+    }
+    const { name, specialty } = req.body;
+    console.log('Update doctor profile request:', { userId: req.user.id, name, specialty });
+    try {
+      const user = await User.findById(req.user.id);
+      if (user.role !== 'doctor') {
+        console.log('Unauthorized access to update profile:', user.email);
+        return res.status(403).json({ message: 'Unauthorized' });
+      }
+      user.name = name;
+      user.specialty = specialty || '';
+      await user.save();
+      console.log('Doctor profile updated:', { email: user.email, name, specialty });
+      res.json({ message: 'Profile updated successfully', name, specialty });
+    } catch (err) {
+      console.error('Update doctor profile error:', err.message);
+      res.status(500).json({ message: 'Server error', error: err.message });
+    }
+  }
+);
+
+// Get doctor dashboard stats
+router.get('/doctor/stats', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (user.role !== 'doctor') {
+      console.log('Unauthorized access to stats:', user.email);
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    const totalPatients = await User.countDocuments({ role: 'patient' });
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const totalAppointmentsToday = await Appointment.countDocuments({
+      doctorId: req.user.id,
+      date: { $gte: today, $lt: tomorrow },
+      status: 'approved'
+    });
+    const pendingAppointments = await Appointment.countDocuments({
+      doctorId: req.user.id,
+      status: 'pending'
+    });
+    const activePatients = await User.countDocuments({ role: 'patient' });
+    console.log('Stats fetched:', { totalPatients, totalAppointmentsToday, pendingAppointments, activePatients });
+    res.json({
+      totalPatients,
+      totalAppointmentsToday,
+      pendingAppointments,
+      activePatients
+    });
+  } catch (err) {
+    console.error('Get stats error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Get all patients
+router.get('/doctor/patients', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (user.role !== 'doctor') {
+      console.log('Unauthorized access to patients:', user.email);
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    const patients = await User.find({ role: 'patient' }).select('name email patientId');
+    console.log('Patients fetched:', patients.length);
+    res.json(patients);
+  } catch (err) {
+    console.error('Get patients error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Get all doctors
+router.get('/doctors', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (user.role !== 'patient') {
+      console.log('Unauthorized access to doctors list:', user.email);
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    const doctors = await User.find({ role: 'doctor' }).select('name _id specialty');
+    console.log('Doctors fetched:', doctors.length);
+    res.json(doctors);
+  } catch (err) {
+    console.error('Get doctors error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Get all appointments for doctor
+router.get('/doctor/appointments', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (user.role !== 'doctor') {
+      console.log('Unauthorized access to appointments:', user.email);
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    const appointments = await Appointment.find({ doctorId: req.user.id })
+      .populate('patientId', 'name email')
+      .sort({ createdAt: -1 });
+    console.log('Appointments fetched:', appointments.length);
+    res.json(appointments);
+  } catch (err) {
+    console.error('Get appointments error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Update appointment status
+router.patch('/doctor/appointments/:id', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (user.role !== 'doctor') {
+      console.log('Unauthorized access to update appointment:', user.email);
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    const { status } = req.body;
+    if (!['approved', 'rejected'].includes(status)) {
+      console.log('Invalid status:', status);
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+    const appointment = await Appointment.findById(req.params.id);
+    if (!appointment || appointment.doctorId.toString() !== req.user.id) {
+      console.log('Appointment not found or unauthorized:', req.params.id);
+      return res.status(404).json({ message: 'Appointment not found' });
+    }
+    appointment.status = status;
+    await appointment.save();
+    console.log(`Appointment ${appointment._id} updated to ${status}`);
+    res.json({ message: 'Appointment updated', appointment });
+  } catch (err) {
+    console.error('Update appointment error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Add medication for patient
+router.post(
+  '/doctor/medications',
+  authenticateToken,
+  [
+    body('patientId').notEmpty().withMessage('Patient ID is required'),
+    body('name').notEmpty().withMessage('Medication name is required'),
+    body('time').notEmpty().withMessage('Time is required')
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log('Add medication validation errors:', errors.array());
+      return res.status(400).json({ message: errors.array()[0].msg });
+    }
+    const { patientId, name, time } = req.body;
+    console.log('Add medication request:', { patientId, name, time });
+    try {
+      const user = await User.findById(req.user.id);
+      if (user.role !== 'doctor') {
+        console.log('Unauthorized access to add medication:', user.email);
+        return res.status(403).json({ message: 'Unauthorized' });
+      }
+      const patient = await User.findOne({ patientId });
+      if (!patient || patient.role !== 'patient') {
+        console.log('Patient not found:', patientId);
+        return res.status(404).json({ message: 'Patient not found' });
+      }
+      const medication = new Medication({
+        patientId: patient._id,
+        doctorId: req.user.id,
+        name,
+        time,
+        date: new Date()
+      });
+      await medication.save();
+      console.log('Medication added:', { patientId, name });
+      res.status(201).json({ message: 'Medication added successfully', medication });
+    } catch (err) {
+      console.error('Add medication error:', err.message);
+      res.status(500).json({ message: 'Server error', error: err.message });
+    }
+  }
+);
+
+// Get patient medications
+router.get('/patient/medications', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (user.role !== 'patient') {
+      console.log('Unauthorized access to medications:', user.email);
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const medications = await Medication.find({
+      patientId: req.user.id,
+      date: { $gte: today, $lt: tomorrow }
+    });
+    console.log('Medications fetched:', medications.length);
+    res.json(medications);
+  } catch (err) {
+    console.error('Get medications error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Update medication taken status
+router.patch('/patient/medications/:id', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (user.role !== 'patient') {
+      console.log('Unauthorized access to update medication:', user.email);
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    const medication = await Medication.findById(req.params.id);
+    if (!medication || medication.patientId.toString() !== req.user.id) {
+      console.log('Medication not found or unauthorized:', req.params.id);
+      return res.status(404).json({ message: 'Medication not found' });
+    }
+    medication.taken = !medication.taken;
+    await medication.save();
+    console.log(`Medication ${medication._id} updated to taken: ${medication.taken}`);
+    res.json(medication);
+  } catch (err) {
+    console.error('Update medication error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Get videos
+router.get('/patient/videos', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (user.role !== 'patient') {
+      console.log('Unauthorized access to videos:', user.email);
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    const videos = await Video.find();
+    console.log('Videos fetched:', videos.length);
+    res.json(videos);
+  } catch (err) {
+    console.error('Get videos error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Book appointment
+router.post('/patient/appointments', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (user.role !== 'patient') {
+      console.log('Unauthorized access to book appointment:', user.email);
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    const { doctorId, date, time, reason } = req.body;
+    const appointment = new Appointment({
+      patientId: req.user.id,
+      doctorId,
+      date,
+      time,
+      reason
+    });
+    await appointment.save();
+    console.log(`Appointment created for patient ${user.email}`);
+    res.json({ message: 'Appointment booked', appointment });
+  } catch (err) {
+    console.error('Book appointment error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Get patient appointments
+router.get('/patient/appointments', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (user.role !== 'patient') {
+      console.log('Unauthorized access to appointments:', user.email);
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    const appointments = await Appointment.find({ patientId: req.user.id })
+      .populate('doctorId', 'name')
+      .sort({ createdAt: -1 });
+    console.log('Appointments fetched for patient:', appointments.length);
+    res.json(appointments);
+  } catch (err) {
+    console.error('Get appointments error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+router.post(
+  '/doctor/videos',
+  authenticateToken,
+  [
+    body('title').notEmpty().withMessage('Title is required'),
+    body('url').isURL().withMessage('Valid URL is required'),
+    body('description').optional().isString().withMessage('Description must be a string')
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log('Add video validation errors:', errors.array());
+      return res.status(400).json({ message: errors.array()[0].msg });
+    }
+    const { title, url, description } = req.body;
+    console.log('Add video request:', { title, url });
+    try {
+      const user = await User.findById(req.user.id);
+      if (user.role !== 'doctor') {
+        console.log('Unauthorized access to add video:', user.email);
+        return res.status(403).json({ message: 'Unauthorized' });
+      }
+      const video = new Video({
+        title,
+        url,
+        description
+      });
+      await video.save();
+      console.log('Video added:', { title });
+      res.status(201).json({ message: 'Video added successfully', video });
+    } catch (err) {
+      console.error('Add video error:', err.message);
+      res.status(500).json({ message: 'Server error', error: err.message });
+    }
+  }
+);
+
+// Create SOS alert
+router.post('/patient/sos', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (user.role !== 'patient') {
+      console.log('Unauthorized access to SOS:', user.email);
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    const { doctorId } = req.body;
+    if (!doctorId) {
+      console.log('Doctor ID missing for SOS alert');
+      return res.status(400).json({ message: 'Doctor ID required' });
+    }
+    const doctor = await User.findById(doctorId);
+    if (!doctor || doctor.role !== 'doctor') {
+      console.log('Doctor not found:', doctorId);
+      return res.status(404).json({ message: 'Doctor not found' });
+    }
+    const sosAlert = new SosAlert({
+      patientId: req.user.id,
+      doctorId
+    });
+    await sosAlert.save();
+    console.log(`SOS alert created for patient ${user.email} to doctor ${doctor.email}`);
+    res.status(201).json({ message: 'SOS alert sent' });
+  } catch (err) {
+    console.error('Create SOS error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Get SOS alerts for doctor
+router.get('/doctor/sos-alerts', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (user.role !== 'doctor') {
+      console.log('Unauthorized access to SOS alerts:', user.email);
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    const alerts = await SosAlert.find({ doctorId: req.user.id, status: 'active' })
+      .populate('patientId', 'name email');
+    console.log('SOS alerts fetched:', alerts.length);
+    res.json(alerts);
+  } catch (err) {
+    console.error('Get SOS alerts error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Resolve SOS alert
+router.patch('/doctor/sos-alerts/:id', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (user.role !== 'doctor') {
+      console.log('Unauthorized access to resolve SOS:', user.email);
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+    const alert = await SosAlert.findById(req.params.id);
+    if (!alert || alert.doctorId.toString() !== req.user.id) {
+      console.log('SOS alert not found or unauthorized:', req.params.id);
+      return res.status(404).json({ message: 'SOS alert not found' });
+    }
+    alert.status = 'resolved';
+    await alert.save();
+    console.log(`SOS alert ${alert._id} resolved`);
+    res.json({ message: 'SOS alert resolved' });
+  } catch (err) {
+    console.error('Resolve SOS error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+module.exports = router;
+
+this is auth.js
+
+----------------------------------
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ALZO - Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#6663ff',
+            secondary: '#57B5E7'
+          },
+          borderRadius: {
+            'button': '8px'
+          }
+        },
+        fontFamily: {
+          'sans': ['Inter', 'sans-serif'],
+          'display': ['Pacifico', 'cursive']
+        }
+      }
+    }
+  </script>
+</head>
+<body class="font-sans bg-white">
+  <nav class="top-0 w-full bg-white/95 backdrop-blur-sm z-50 border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16 items-center">
+        <a href="/" class="text-2xl font-display text-primary" aria-label="ALZO Home">ALZO</a>
+        <div class="hidden md:flex items-center space-x-8">
+          <a href="/#features" class="text-gray-700 hover:text-primary" aria-label="Features">Features</a>
+          <a href="/#solutions" class="text-gray-700 hover:text-primary" aria-label="Solutions">Solutions</a>
+          <a href="/#testimonials" class="text-gray-700 hover:text-primary" aria-label="Testimonials">Testimonials</a>
+          <a href="/#pricing" class="text-gray-700 hover:text-primary" aria-label="Pricing">Pricing</a>
+          <a href="/signup" class="bg-primary text-white px-6 py-2 rounded-button hover:bg-primary/90 cursor-pointer whitespace-nowrap" aria-label="Sign Up">Sign Up</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+  <section class="min-h-screen flex items-center bg-gradient-to-br from-white to-blue-50 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+      <div class="text-center md:text-left">
+        <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Login to ALZO</h1>
+        <p class="text-lg text-gray-600 mb-6">Access your account to manage Alzheimer's care.</p>
+      </div>
+      <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg w-full max-w-md mx-auto">
+        <h2 class="text-2xl font-semibold text-gray-900 mb-4 text-center">Login to Your Account</h2>
+        <form id="loginForm">
+          <div class="mb-4">
+            <label for="email" class="block text-gray-700 font-medium mb-2">Email Address</label>
+            <input type="email" id="email" name="email" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary" required />
+          </div>
+          <div class="mb-4">
+            <label for="password" class="block text-gray-700 font-medium mb-2">Password</label>
+            <input type="password" id="password" name="password" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary" required />
+          </div>
+          <div id="errorMessage" class="text-red-500 text-center text-sm mb-4 hidden"></div>
+          <button type="submit" id="loginButton" class="w-full bg-primary text-white py-3 rounded-button font-semibold hover:bg-primary/90">Login</button>
+        </form>
+        <p class="text-center text-gray-600 text-sm mt-4">
+          Don't have an account? <a href="/signup" class="text-primary hover:underline">Sign Up</a>
+        </p>
+        <p class="text-center text-gray-600 text-sm mt-2">
+          <a href="#" class="text-primary hover:underline">Forgot Password?</a>
+        </p>
+      </div>
+    </div>
+  </section>
+  <footer class="bg-gray-900 text-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <p class="text-center text-gray-400 text-sm">© 2025 ALZO. All rights reserved.</p>
+    </div>
+  </footer>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const loginButton = document.getElementById('loginButton');
+      const errorMessage = document.getElementById('errorMessage');
+      errorMessage.classList.add('hidden');
+      loginButton.textContent = 'Logging In';
+      loginButton.disabled = true;
+      loginButton.classList.add('opacity-50', 'cursor-not-allowed');
+      const formData = {
+        email: form.email.value.trim().toLowerCase(),
+        password: form.password.value,
+      };
+      console.log('Login attempt:', formData);
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+        const data = await response.json();
+        console.log('Login response:', data);
+        if (!response.ok) {
+          errorMessage.textContent = data.message || 'Login failed';
+          errorMessage.classList.remove('hidden');
+          loginButton.textContent = 'Login';
+          loginButton.disabled = false;
+          loginButton.classList.remove('opacity-50', 'cursor-not-allowed');
+          return;
+        }
+        localStorage.setItem('token', data.token);
+        if (data.redirect) {
+          console.log(`Redirecting to ${data.redirect}`);
+          window.location.href = data.redirect;
+        } else {
+          errorMessage.textContent = 'Unexpected response from server';
+          errorMessage.classList.remove('hidden');
+          loginButton.textContent = 'Login';
+          loginButton.disabled = false;
+          loginButton.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+      } catch (err) {
+        console.error('Login error:', err.message);
+        errorMessage.textContent = 'An error occurred. Please try again.';
+        errorMessage.classList.remove('hidden');
+        loginButton.textContent = 'Login';
+        loginButton.disabled = false;
+        loginButton.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    });
+  </script>
+</body>
+</html>
+
+
+this is login.html
+
+------------------------------
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Select Your Role - ALZO Healthcare</title>
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<script>tailwind.config={theme:{extend:{colors:{primary:'#6663ff',secondary:'#4F46E5'},borderRadius:{'none':'0px','sm':'4px',DEFAULT:'8px','md':'12px','lg':'16px','xl':'20px','2xl':'24px','3xl':'32px','full':'9999px','button':'8px'}}}}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
+<style>
+:where([class^="ri-"])::before { content: none; }
+body {
+font-family: 'Inter', sans-serif;
+background-color: #f9fafb;
+}
+.role-btn:hover {
+transform: translateY(-2px);
+box-shadow: 0 10px 15px -3px rgba(102, 99, 255, 0.1), 0 4px 6px -2px rgba(102, 99, 255, 0.05);
+}
+.error-message {
+max-height: 0;
+overflow: hidden;
+transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+opacity: 0;
+margin-top: 0;
+}
+.error-message.show {
+max-height: 60px;
+opacity: 1;
+margin-top: 1rem;
+}
+</style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+<div class="w-full max-w-md">
+<div class="bg-white rounded-xl shadow-lg p-8 transition-all duration-300">
+<div class="text-center mb-8">
+<h1 class="text-2xl font-bold text-gray-800 mb-2">Select Your Role</h1>
+<p class="text-gray-500">Choose how you want to use ALZO today</p>
+</div>
+<div class="space-y-4" id="role-buttons">
+</div>
+<div class="error-message text-center text-red-500 text-sm font-medium rounded-lg p-3 bg-red-50" id="error-message">
+Unable to process role selection. Please try again.
+</div>
+</div>
+<div class="mt-6 text-center">
+<a href="mailto:support@alzo.com" class="text-sm text-gray-500 hover:text-primary transition-colors">Need help? Contact support</a>
+</div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    window.location.href = '/login';
+    return;
+  }
+  const roleData = {
+    'patient': {
+      icon: 'ri-user-heart-line',
+      title: 'I am a Patient',
+      description: 'Access your health records and appointments',
+      redirect: '/patient/pat.html'
+    },
+    'caregiver': {
+      icon: 'ri-heart-pulse-line',
+      title: 'I am a Caregiver',
+      description: 'Manage care for your loved ones',
+      redirect: '/caregiver/care.html'
+    },
+    'doctor': {
+      icon: 'ri-stethoscope-line',
+      title: 'I am a Doctor',
+      description: 'Access patient information and schedules',
+      redirect: '/doctor/doc.html'
+    }
+  };
+  function createRoleButtons(roles) {
+    const container = document.getElementById('role-buttons');
+    container.innerHTML = '';
+    roles.forEach(role => {
+      if (roleData[role]) {
+        const { icon, title, description } = roleData[role];
+        const button = document.createElement('button');
+        button.className = 'role-btn w-full flex items-center p-4 bg-white border border-gray-200 rounded-button text-left transition-all duration-300 hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 whitespace-nowrap';
+        button.innerHTML = `
+          <div class="w-12 h-12 flex items-center justify-center bg-primary/10 rounded-full mr-4">
+            <i class="${icon} text-xl text-primary"></i>
+          </div>
+          <div>
+            <span class="font-medium text-gray-800">${title}</span>
+            <div class="text-sm text-gray-500">${description}</div>
+          </div>
+          <div class="ml-auto">
+            <i class="ri-arrow-right-line text-gray-400"></i>
+          </div>
+        `;
+        button.addEventListener('click', async () => {
+          try {
+            const response = await fetch('/api/auth/select-role', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ role })
+            });
+            if (!response.ok) {
+              throw new Error('Failed to select role');
+            }
+            localStorage.setItem('activeRole', role);
+            window.location.href = roleData[role].redirect;
+          } catch (error) {
+            const errorElement = document.getElementById('error-message');
+            errorElement.classList.add('show');
+            setTimeout(() => errorElement.classList.remove('show'), 3000);
+          }
+        });
+        container.appendChild(button);
+      }
+    });
+  }
+  function checkUserRole() {
+    fetch('/api/auth/me', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to fetch user data');
+      return response.json();
+    })
+    .then(data => {
+      if (data.role && roleData[data.role]) {
+        localStorage.setItem('activeRole', data.role);
+        window.location.href = roleData[data.role].redirect;
+      } else {
+        createRoleButtons(['patient', 'caregiver', 'doctor']);
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching user data:', error);
+      createRoleButtons(['patient', 'caregiver', 'doctor']);
+    });
+  }
+  checkUserRole();
+});
+</script>
+</body>
+</html>
+
+
+this is role.html
+
+
+--------------------------------------
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALZO - Patient Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#57B5E7',
+                        secondary: '#8DD3C7',
+                        card: '#F9FAFB'
+                    },
+                    borderRadius: {
+                        'none': '0px',
+                        'sm': '4px',
+                        DEFAULT: '8px',
+                        'md': '12px',
+                        'lg': '16px',
+                        'xl': '20px',
+                        '2xl': '24px',
+                        '3xl': '32px',
+                        'full': '9999px',
+                        'button': '8px',
+                        'card': '12px'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .card { background-color: #F9FAFB; border-radius: 12px; padding: 16px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+        .checkbox-custom { appearance: none; width: 20px; height: 20px; border: 2px solid #D1D5DB; border-radius: 4px; background-color: white; cursor: pointer; }
+        .checkbox-custom:checked { background-color: #57B5E7; border-color: #57B5E7; }
+        .checkbox-custom:checked::after { content: '✓'; color: white; font-size: 14px; text-align: center; display: block; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex">
+    <aside class="fixed top-0 left-0 w-64 h-full bg-white shadow-lg">
+        <div class="py-6 px-4">
+            <div class="text-2xl font-semibold text-primary mb-8">ALZO</div>
+            <nav class="space-y-4">
+                <a href="/patient/pat.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-primary bg-opacity-10">
+                    <div class="w-10 h-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center">
+                        <i class="ri-home-line text-lg text-primary"></i>
+                    </div>
+                    <span class="text-sm text-primary font-medium">Home</span>
+                </a>
+                <button class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-brain-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Tests</span>
+                </button>
+                <button class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-medicine-bottle-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Medications</span>
+                </button>
+                <button class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-video-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Videos</span>
+                </button>
+                <a href="/patient/appointments.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-calendar-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Appointments</span>
+                </a>
+                <button onclick="sendSosAlert()" class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-alarm-warning-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Emergency</span>
+                </button>
+                <a href="/patient/settings.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-settings-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Settings</span>
+                </a>
+                <button id="logoutButton" class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-logout-box-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Logout</span>
+                </button>
+            </nav>
+        </div>
+    </aside>
+    <div class="flex-1 ml-64 max-w-7xl mx-auto px-4 py-8">
+        <header class="py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="text-2xl font-semibold">
+                    <span id="greeting">Good morning</span>, <span id="userName">Patient</span>
+                </div>
+                <div class="text-lg text-gray-600" id="currentTime">8:30 AM</div>
+            </div>
+            <button onclick="sendSosAlert()" class="bg-red-500 text-white px-4 py-2 rounded-button font-semibold hover:bg-red-600">
+                <i class="ri-alarm-warning-line mr-2"></i>SOS
+            </button>
+        </header>
+        <div id="sosFeedback" class="text-center text-sm mb-4 hidden"></div>
+        <main class="grid grid-cols-2 gap-6">
+            <div class="card">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold">Today's Medications</h2>
+                    <span class="text-sm text-gray-500" id="remainingMedications">0 remaining</span>
+                </div>
+                <div id="medicationList" class="space-y-2"></div>
+            </div>
+            <div class="card">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold">Memory Test</h2>
+                    <button class="text-sm text-primary font-medium">Start Test</button>
+                </div>
+                <div class="text-sm text-gray-500">Weekly Progress</div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 mt-1">
+                    <div class="bg-primary h-2.5 rounded-full" style="width: 75%"></div>
+                </div>
+                <span class="text-sm text-gray-500 mt-1">75%</span>
+            </div>
+            <div class="card">
+                <h2 class="text-lg font-semibold mb-4">Educational Videos</h2>
+                <div id="videoList" class="space-y-2"></div>
+            </div>
+            <div class="card">
+                <h2 class="text-lg font-semibold mb-4">Location Tracking</h2>
+                <div id="locationMap" class="w-full h-48 bg-gray-200 rounded-lg"></div>
+            </div>
+        </main>
+    </div>
+    <script>
+        async function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.error('No token found in localStorage');
+                window.location.href = '/login';
+                return null;
+            }
+            try {
+                console.log('Checking auth with token:', token.substring(0, 10) + '...');
+                const response = await fetch('/api/auth/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Auth check failed:', response.status, errorData.message);
+                    throw new Error(errorData.message || `Authentication failed (HTTP ${response.status})`);
+                }
+                const data = await response.json();
+                console.log('Auth check response:', data);
+                if (data.role !== 'patient') {
+                    console.error('User role is not patient:', data.role);
+                    window.location.href = '/role';
+                    return null;
+                }
+                return data;
+            } catch (err) {
+                console.error('Auth error:', err.message);
+                localStorage.removeItem('token');
+                window.location.href = '/login';
+                return null;
+            }
+        }
+
+        async function loadUserData() {
+            const userData = await checkAuth();
+            if (!userData) return;
+            document.getElementById('userName').textContent = userData.name || 'Patient';
+            const hour = new Date().getHours();
+            const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+            document.getElementById('greeting').textContent = greeting;
+            document.getElementById('currentTime').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        async function loadMedications() {
+            try {
+                const response = await fetch('/api/auth/patient/medications', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to fetch medications');
+                }
+                const medications = await response.json();
+                const medicationList = document.getElementById('medicationList');
+                const remaining = medications.filter(med => !med.taken).length;
+                document.getElementById('remainingMedications').textContent = `${remaining} remaining`;
+                medicationList.innerHTML = medications.length ? medications.map(med => `
+                    <div class="flex items-center justify-between p-2 bg-white rounded-md">
+                        <div class="flex items-center">
+                            <input type="checkbox" class="checkbox-custom" ${med.taken ? 'checked' : ''} onchange="updateMedication('${med._id}', this.checked)">
+                            <div class="ml-3">
+                                <p class="text-sm font-medium">${med.name}</p>
+                                <p class="text-xs text-gray-500">${med.time}</p>
+                            </div>
+                        </div>
+                        <span class="text-xs ${med.taken ? 'text-green-500' : 'text-gray-500'}">${med.taken ? 'Taken' : 'Pending'}</span>
+                    </div>
+                `).join('') : '<p class="text-sm text-gray-500">No medications for today.</p>';
+            } catch (err) {
+                console.error('Load medications error:', err.message);
+                document.getElementById('medicationList').innerHTML = '<p class="text-sm text-red-500">Failed to load medications.</p>';
+            }
+        }
+
+        async function updateMedication(medicationId, taken) {
+            try {
+                const response = await fetch(`/api/auth/patient/medications/${medicationId}`, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to update medication');
+                }
+                loadMedications();
+            } catch (err) {
+                console.error('Update medication error:', err.message);
+            }
+        }
+
+        async function loadVideos() {
+            try {
+                const response = await fetch('/api/auth/patient/videos', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to fetch videos');
+                }
+                const videos = await response.json();
+                const videoList = document.getElementById('videoList');
+                videoList.innerHTML = videos.length ? videos.map(video => `
+                    <div class="p-2 bg-white rounded-md">
+                        <p class="text-sm font-medium">${video.title}</p>
+                        <p class="text-xs text-gray-500">${video.description || 'No description'}</p>
+                        <a href="${video.url}" target="_blank" class="text-sm text-primary hover:underline">Watch Video</a>
+                    </div>
+                `).join('') : '<p class="text-sm text-gray-500">No videos available.</p>';
+            } catch (err) {
+                console.error('Load videos error:', err.message);
+                document.getElementById('videoList').innerHTML = '<p class="text-sm text-red-500">Failed to load videos.</p>';
+            }
+        }
+
+        async function sendSosAlert() {
+            const feedback = document.getElementById('sosFeedback');
+            feedback.classList.add('hidden');
+            feedback.classList.remove('text-green-500', 'text-red-500');
+            try {
+                const response = await fetch('/api/auth/patient/sos', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({})
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('SOS send failed:', response.status, errorData.message);
+                    throw new Error(errorData.message || 'Failed to send SOS alert');
+                }
+                feedback.textContent = 'SOS alert sent!';
+                feedback.classList.add('text-green-500');
+                feedback.classList.remove('hidden');
+                setTimeout(() => feedback.classList.add('hidden'), 3000);
+            } catch (err) {
+                console.error('Send SOS error:', err.message);
+                feedback.textContent = err.message || 'Failed to send SOS alert.';
+                feedback.classList.add('text-red-500');
+                feedback.classList.remove('hidden');
+                setTimeout(() => feedback.classList.add('hidden'), 3000);
+            }
+        }
+
+        function handleLogout() {
+            console.log('Logging out');
+            localStorage.removeItem('token');
+            localStorage.removeItem('activeRole');
+            window.location.href = '/login';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, loading patient data');
+            loadUserData();
+            loadMedications();
+            loadVideos();
+            document.getElementById('logoutButton').addEventListener('click', handleLogout);
+        });
+    </script>
+</body>
+</html>
+
+
+this is pat.heml
+
+-----------------------------
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALZO Doctor Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#57B5E7',
+                        secondary: '#8DD3C7',
+                        card: '#F9FAFB'
+                    },
+                    borderRadius: {
+                        'none': '0px',
+                        'sm': '4px',
+                        DEFAULT: '8px',
+                        'md': '12px',
+                        'lg': '16px',
+                        'xl': '20px',
+                        '2xl': '24px',
+                        '3xl': '32px',
+                        'full': '9999px',
+                        'button': '8px',
+                        'card': '12px'
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .card { background-color: #F9FAFB; border-radius: 12px; padding: 16px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+        .chart-container { height: 280px; }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex">
+    <aside class="fixed top-0 left-0 w-64 h-full bg-white shadow-lg">
+        <div class="py-6 px-4">
+            <div class="text-2xl font-semibold text-primary mb-8">ALZO</div>
+            <nav class="space-y-4">
+                <a href="#" id="dashboardNav" class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-primary bg-opacity-10">
+                    <div class="w-10 h-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center">
+                        <i class="ri-dashboard-line text-lg text-primary"></i>
+                    </div>
+                    <span class="text-sm text-primary font-medium">Dashboard</span>
+                </a>
+                <a href="#" id="patientsNav" class="flex items-center space-x-3 px-4 py-3 rounded-lg">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-user-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Patients</span>
+                </a>
+                <a href="#" id="appointmentsNav" class="flex items-center space-x-3 px-4 py-3 rounded-lg">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-calendar-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Appointments</span>
+                </a>
+                <a href="#" id="medicationsNav" class="flex items-center space-x-3 px-4 py-3 rounded-lg">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-medicine-bottle-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Medications</span>
+                </a>
+                <a href="#" id="videosNav" class="flex items-center space-x-3 px-4 py-3 rounded-lg">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-video-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Videos</span>
+                </a>
+                <a href="#" id="emergencyNav" class="flex items-center space-x-3 px-4 py-3 rounded-lg">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-alarm-warning-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Emergency</span>
+                </a>
+                
+                <button id="logoutButton" class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-logout-box-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Logout</span>
+                </button>
+            </nav>
+        </div>
+    </aside>
+
+    <div class="flex-1 ml-64 max-w-7xl mx-auto px-4 py-8">
+        <header class="py-4 flex items-center justify-between">
+            <div class="relative">
+                <input type="text" placeholder="Search patients..." class="pl-10 pr-4 py-2 w-64 rounded-button border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm">
+                <div class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center text-gray-400">
+                    <i class="ri-search-line"></i>
+                </div>
+            </div>
+           
+        </header>
+
+        <div id="dashboardSection">
+            <div class="grid grid-cols-4 gap-4 mb-6">
+                <div class="card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Total Patients</p>
+                            <p class="text-2xl font-semibold mt-1" id="totalPatients">0</p>
+                        </div>
+                        <div class="w-10 h-10 flex items-center justify-center bg-primary bg-opacity-10 text-primary rounded">
+                            <i class="ri-user-line ri-lg"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-xs text-green-500 flex items-center">
+                        <i class="ri-arrow-up-line mr-1"></i>
+                        <span id="patientsChange">0% from last month</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Today's Appointments</p>
+                            <p class="text-2xl font-semibold mt-1" id="totalAppointments">0</p>
+                        </div>
+                        <div class="w-10 h-10 flex items-center justify-center bg-primary bg-opacity-10 text-primary rounded">
+                            <i class="ri-calendar-line ri-lg"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500">
+                        <span id="nextAppointment">No appointments today</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Active Patients</p>
+                            <p class="text-2xl font-semibold mt-1" id="activePatients">0</p>
+                        </div>
+                        <div class="w-10 h-10 flex items-center justify-center bg-primary bg-opacity-10 text-primary rounded">
+                            <i class="ri-user-heart-line ri-lg"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500">
+                        <span id="activePatientsInfo">0 active treatments</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500">Pending Appointments</p>
+                            <p class="text-2xl font-semibold mt-1" id="pendingAppointments">0</p>
+                        </div>
+                        <div class="w-10 h-10 flex items-center justify-center bg-primary bg-opacity-10 text-primary rounded">
+                            <i class="ri-calendar-todo-line ri-lg"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-xs text-orange-500">
+                        <span id="pendingAppointmentsInfo">0 awaiting action</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-4 mb-6">
+                <div class="card col-span-2">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold">Patient Statistics</h3>
+                        <div class="flex space-x-2">
+                            <button class="px-3 py-1 text-sm bg-gray-100 rounded-full">Week</button>
+                            <button class="px-3 py-1 text-sm bg-primary text-white rounded-full">Month</button>
+                            <button class="px-3 py-1 text-sm bg-gray-100 rounded-full">Year</button>
+                        </div>
+                    </div>
+                    <div id="patientChart" class="chart-container"></div>
+                </div>
+                <div class="card">
+                    <h3 class="font-semibold mb-4">Memory Test Results</h3>
+                    <div id="memoryChart" class="chart-container"></div>
+                </div>
+                <div class="card col-span-3">
+                    <div class="mb-4">
+                        <h3 class="font-semibold">Emergency Alerts</h3>
+                    </div>
+                    <div class="divide-y" id="sosAlertsList"></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-4">
+                <div class="col-span-2 card">
+                    <div class="mb-4">
+                        <h3 class="font-semibold">Recent Patients</h3>
+                    </div>
+                    <div class="divide-y" id="patientsList"></div>
+                </div>
+                <div class="card">
+                    <div class="mb-4">
+                        <h3 class="font-semibold">Appointments</h3>
+                    </div>
+                    <div class="divide-y" id="appointmentsList"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="patientsSection" class="hidden">
+            <div class="card">
+                <h3 class="font-semibold mb-4">All Patients</h3>
+                <div class="divide-y" id="allPatientsList"></div>
+            </div>
+        </div>
+
+        <div id="appointmentsSection" class="hidden">
+            <div class="card">
+                <h3 class="font-semibold mb-4">All Appointments</h3>
+                <div class="divide-y" id="allAppointmentsList"></div>
+            </div>
+        </div>
+
+        <div id="medicationsSection" class="hidden">
+            <div class="card">
+                <h3 class="font-semibold mb-4">Add Medication</h3>
+                <form id="medicationForm">
+                    <div class="mb-4">
+                        <label for="patientId" class="block text-gray-700 font-medium mb-2 text-sm">Patient ID</label>
+                        <input type="text" id="patientId" name="patientId" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary" required />
+                    </div>
+                    <div class="mb-4">
+                        <label for="name" class="block text-gray-700 font-medium mb-2 text-sm">Medication Name</label>
+                        <input type="text" id="name" name="name" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary" required />
+                    </div>
+                    <div class="mb-4">
+                        <label for="time" class="block text-gray-700 font-medium mb-2 text-sm">Time (e.g., 08:00 AM)</label>
+                        <input type="text" id="time" name="time" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary" required />
+                    </div>
+                    <div id="medicationError" class="text-red-500 text-center text-sm mb-4 hidden"></div>
+                    <button type="submit" id="addMedicationButton" class="w-full bg-primary text-white py-3 rounded-button font-semibold hover:bg-primary/90">Add Medication</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="videosSection" class="hidden">
+            <div class="card">
+                <h3 class="font-semibold mb-4">Add Educational Video</h3>
+                <form id="videoForm">
+                    <div class="mb-4">
+                        <label for="videoTitle" class="block text-gray-700 font-medium mb-2 text-sm">Title</label>
+                        <input type="text" id="videoTitle" name="title" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary" required />
+                    </div>
+                    <div class="mb-4">
+                        <label for="videoUrl" class="block text-gray-700 font-medium mb-2 text-sm">Video URL</label>
+                        <input type="url" id="videoUrl" name="url" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary" required />
+                    </div>
+                    <div class="mb-4">
+                        <label for="videoDescription" class="block text-gray-700 font-medium mb-2 text-sm">Description</label>
+                        <textarea id="videoDescription" name="description" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary" rows="3"></textarea>
+                    </div>
+                    <div id="videoError" class="text-red-500 text-center text-sm mb-4 hidden"></div>
+                    <button type="submit" id="addVideoButton" class="w-full bg-primary text-white py-3 rounded-button font-semibold hover:bg-primary/90">Add Video</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="emergencySection" class="hidden">
+            <div class="card">
+                <h3 class="font-semibold mb-4">Emergency Alerts</h3>
+                <div id="sosAlertsList" class="divide-y"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function checkAuth() {
+            const token = localStorage.getItem('token');
+            console.log('Checking auth, token:', token ? 'Present' : 'Missing');
+            if (!token) {
+                console.log('No token found, redirecting to /login');
+                window.location.href = '/login';
+                return false;
+            }
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                console.log('Fetch /api/auth/me status:', response.status);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.log('Fetch /api/auth/me error:', errorData);
+                    throw new Error(errorData.message || `HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                console.log('Fetch /api/auth/me response:', data);
+                if (data.role !== 'doctor') {
+                    console.log('Role is not doctor, redirecting to /role:', data.role);
+                    window.location.href = '/role';
+                    return false;
+                }
+                return data;
+            } catch (err) {
+                console.error('Auth error:', err.message);
+                console.log('Redirecting to /login due to auth failure');
+                window.location.href = '/login';
+                return false;
+            }
+        }
+
+        async function loadDashboard() {
+            const userData = await checkAuth();
+            if (!userData) return;
+
+            document.getElementById('doctorName').textContent = `Dr. ${userData.name}`;
+            document.getElementById('doctorSpecialty').textContent = userData.specialty || 'Specialty not set';
+
+            try {
+                const statsResponse = await fetch('/api/auth/doctor/stats', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                const stats = await statsResponse.json();
+                document.getElementById('totalPatients').textContent = stats.totalPatients;
+                document.getElementById('totalAppointments').textContent = stats.totalAppointmentsToday;
+                document.getElementById('activePatients').textContent = stats.activePatients;
+                document.getElementById('pendingAppointments').textContent = stats.pendingAppointments;
+                document.getElementById('patientsChange').textContent = `${Math.round(Math.random() * 10)}% from last month`;
+                document.getElementById('nextAppointment').textContent = stats.totalAppointmentsToday > 0 ? 'Next at 10:30 AM' : 'No appointments today';
+                document.getElementById('activePatientsInfo').textContent = `${stats.activePatients} active treatments`;
+                document.getElementById('pendingAppointmentsInfo').textContent = `${stats.pendingAppointments} awaiting action`;
+            } catch (err) {
+                console.error('Stats error:', err.message);
+            }
+
+            try {
+                const patientsResponse = await fetch('/api/auth/doctor/patients', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                const patients = await patientsResponse.json();
+                const patientsList = document.getElementById('patientsList');
+                const allPatientsList = document.getElementById('allPatientsList');
+                const patientHtml = patients.map(patient => `
+                    <div class="p-4 flex items-center justify-between hover:bg-gray-50">
+                        <div class="flex items-center">
+                            <img src="https://public.readdy.ai/ai/img_res/1682c0c2b428f4c0962dbe4c89152a00.jpg" class="w-10 h-10 rounded-full object-cover">
+                            <div class="ml-3">
+                                <p class="font-medium">${patient.name}</p>
+                                <p class="text-sm text-gray-500">ID: ${patient.patientId}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full">Stable</span>
+                            <button class="w-8 h-8 flex items-center justify-center rounded-button hover:bg-gray-100">
+                                <i class="ri-more-2-fill"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                patientsList.innerHTML = patientHtml;
+                allPatientsList.innerHTML = patientHtml;
+            } catch (err) {
+                console.error('Patients error:', err.message);
+            }
+
+            try {
+                const appointmentsResponse = await fetch('/api/auth/doctor/appointments', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                const appointments = await appointmentsResponse.json();
+                const appointmentsList = document.getElementById('appointmentsList');
+                const allAppointmentsList = document.getElementById('allAppointmentsList');
+                const appointmentHtml = appointments.map(appointment => `
+                    <div class="p-4 flex items-center justify-between hover:bg-gray-50">
+                        <div>
+                            <p class="font-medium">${appointment.patientId.name}</p>
+                            <p class="text-sm text-gray-500">${new Date(appointment.date).toLocaleDateString()} at ${appointment.time}</p>
+                            <p class="text-sm text-gray-500">${appointment.reason}</p>
+                            <p class="text-xs text-${appointment.status === 'approved' ? 'green' : appointment.status === 'rejected' ? 'red' : 'yellow'}-500">${appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            ${appointment.status === 'pending' ? `
+                                <button onclick="updateAppointment('${appointment._id}', 'approved')" class="px-3 py-1 text-sm bg-green-500 text-white rounded-button">Approve</button>
+                                <button onclick="updateAppointment('${appointment._id}', 'rejected')" class="px-3 py-1 text-sm bg-red-500 text-white rounded-button">Reject</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('');
+                appointmentsList.innerHTML = appointmentHtml;
+                allAppointmentsList.innerHTML = appointmentHtml;
+            } catch (err) {
+                console.error('Appointments error:', err.message);
+            }
+
+            try {
+                const alertsResponse = await fetch('/api/auth/doctor/sos-alerts', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (!alertsResponse.ok) {
+                    const errorData = await alertsResponse.json();
+                    throw new Error(errorData.message || 'Failed to fetch SOS alerts');
+                }
+                const alerts = await alertsResponse.json();
+                const alertsList = document.getElementById('sosAlertsList');
+                alertsList.innerHTML = alerts.length > 0 ? alerts.map(alert => `
+                    <div class="p-4 flex items-center justify-between hover:bg-gray-50">
+                        <div>
+                            <p class="font-medium">${alert.patientId.name}</p>
+                            <p class="text-sm text-gray-500">SOS Alert - ${new Date(alert.createdAt).toLocaleString()}</p>
+                        </div>
+                        <button onclick="resolveSosAlert('${alert._id}')" class="px-3 py-1 text-sm bg-primary text-white rounded-button">Resolve</button>
+                    </div>
+                `).join('') : '<p class="p-4 text-sm text-gray-500">No active SOS alerts.</p>';
+            } catch (err) {
+                console.error('SOS alerts error:', err.message);
+                document.getElementById('sosAlertsList').innerHTML = '<p class="text-sm text-red-500">Failed to load SOS alerts.</p>';
+            }
+        }
+
+        async function updateAppointment(appointmentId, status) {
+            try {
+                const response = await fetch(`/api/auth/doctor/appointments/${appointmentId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({ status })
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to update appointment');
+                }
+                console.log(`Appointment ${appointmentId} updated to ${status}`);
+                loadDashboard();
+            } catch (err) {
+                console.error('Update appointment error:', err.message);
+            }
+        }
+
+        async function resolveSosAlert(alertId) {
+            try {
+                const response = await fetch(`/api/auth/doctor/sos-alerts/${alertId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to resolve SOS alert');
+                }
+                console.log(`SOS alert ${alertId} resolved`);
+                loadDashboard();
+            } catch (err) {
+                console.error('Resolve SOS alert error:', err.message);
+            }
+        }
+
+        async function handleAddMedication(e) {
+            e.preventDefault();
+            const form = e.target;
+            const button = document.getElementById('addMedicationButton');
+            const errorMessage = document.getElementById('medicationError');
+            errorMessage.classList.add('hidden');
+            button.textContent = 'Adding...';
+            button.disabled = true;
+            try {
+                const response = await fetch('/api/auth/doctor/medications', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        patientId: form.patientId.value.trim(),
+                        name: form.name.value.trim(),
+                        time: form.time.value.trim()
+                    })
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to add medication');
+                }
+                form.reset();
+                button.textContent = 'Added!';
+                setTimeout(() => {
+                    button.textContent = 'Add Medication';
+                    button.disabled = false;
+                }, 1000);
+            } catch (err) {
+                console.error('Add medication error:', err.message);
+                errorMessage.textContent = err.message || 'An error occurred. Please try again.';
+                errorMessage.classList.remove('hidden');
+                button.textContent = 'Add Medication';
+                button.disabled = false;
+            }
+        }
+
+        async function handleAddVideo(e) {
+            e.preventDefault();
+            const form = e.target;
+            const button = document.getElementById('addVideoButton');
+            const errorMessage = document.getElementById('videoError');
+            errorMessage.classList.add('hidden');
+            button.textContent = 'Adding...';
+            button.disabled = true;
+            try {
+                const response = await fetch('/api/auth/doctor/videos', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        title: form.title.value.trim(),
+                        url: form.url.value.trim(),
+                        description: form.description.value.trim()
+                    })
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to add video');
+                }
+                form.reset();
+                button.textContent = 'Added!';
+                setTimeout(() => {
+                    button.textContent = 'Add Video';
+                    button.disabled = false;
+                }, 1000);
+            } catch (err) {
+                console.error('Add video error:', err.message);
+                errorMessage.textContent = err.message || 'An error occurred. Please try again.';
+                errorMessage.classList.remove('hidden');
+                button.textContent = 'Add Video';
+                button.disabled = false;
+            }
+        }
+
+        function handleLogout() {
+            console.log('Logging out, clearing localStorage');
+            localStorage.removeItem('token');
+            localStorage.removeItem('activeRole');
+            window.location.href = '/login';
+        }
+
+        function toggleSection(sectionId) {
+            const sections = ['dashboardSection', 'patientsSection', 'appointmentsSection', 'medicationsSection', 'videosSection', 'emergencySection'];
+            const navs = ['dashboardNav', 'patientsNav', 'appointmentsNav', 'medicationsNav', 'videosNav', 'emergencyNav'];
+            sections.forEach(section => {
+                document.getElementById(section).classList.add('hidden');
+            });
+            navs.forEach(nav => {
+                const navElement = document.getElementById(nav);
+                if (navElement) {
+                    navElement.classList.remove('bg-primary', 'bg-opacity-10');
+                    navElement.classList.add('text-gray-600');
+                    const icon = navElement.querySelector('i');
+                    if (icon) icon.classList.remove('text-primary');
+                }
+            });
+            const targetSection = document.getElementById(sectionId);
+            const targetNav = document.getElementById(`${sectionId.replace('Section', 'Nav')}`);
+            if (targetSection) targetSection.classList.remove('hidden');
+            if (targetNav) {
+                targetNav.classList.add('bg-primary', 'bg-opacity-10');
+                targetNav.classList.remove('text-gray-600');
+                const icon = targetNav.querySelector('i');
+                if (icon) icon.classList.add('text-primary');
+            }
+        }
+
+        const patientChart = echarts.init(document.getElementById('patientChart'));
+        const memoryChart = echarts.init(document.getElementById('memoryChart'));
+
+        const patientOption = {
+            animation: false,
+            tooltip: {
+                trigger: 'axis',
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                borderColor: '#e5e7eb',
+                textStyle: { color: '#1f2937' }
+            },
+            grid: { top: 10, right: 10, bottom: 20, left: 40 },
+            xAxis: {
+                type: 'category',
+                data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                axisLine: { lineStyle: { color: '#e5e7eb' } }
+            },
+            yAxis: {
+                type: 'value',
+                axisLine: { show: false },
+                splitLine: { lineStyle: { color: '#f3f4f6' } }
+            },
+            series: [{
+                data: [30, 45, 35, 50, 42, 38, 40],
+                type: 'line',
+                smooth: true,
+                symbol: 'none',
+                lineStyle: { color: '#57B5E7' },
+                areaStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
+                        offset: 0,
+                        color: 'rgba(87, 181, 231, 0.2)'
+                    }, {
+                        offset: 1,
+                        color: 'rgba(87, 181, 231, 0.05)'
+                    }])
+                }
+            }]
+        };
+
+        const memoryOption = {
+            animation: false,
+            tooltip: {
+                trigger: 'item',
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                borderColor: '#e5e7eb',
+                textStyle: { color: '#1f2937' }
+            },
+            series: [{
+                type: 'pie',
+                radius: ['60%', '80%'],
+                data: [
+                    { value: 45, name: 'Normal' },
+                    { value: 30, name: 'Mild' },
+                    { value: 15, name: 'Moderate' },
+                    { value: 10, name: 'Severe' }
+                ],
+                itemStyle: {
+                    borderRadius: 4
+                },
+                label: { show: false },
+                color: [
+                    '#57B5E7',
+                    '#8DD3C7',
+                    '#FBBF72',
+                    '#FC8D62'
+                ]
+            }]
+        };
+
+        patientChart.setOption(patientOption);
+        memoryChart.setOption(memoryOption);
+
+        window.addEventListener('resize', () => {
+            patientChart.resize();
+            memoryChart.resize();
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboard();
+            document.getElementById('logoutButton').addEventListener('click', handleLogout);
+            document.getElementById('dashboardNav').addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleSection('dashboardSection');
+            });
+            document.getElementById('patientsNav').addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleSection('patientsSection');
+            });
+            document.getElementById('appointmentsNav').addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleSection('appointmentsSection');
+            });
+            document.getElementById('medicationsNav').addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleSection('medicationsSection');
+            });
+            document.getElementById('videosNav').addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleSection('videosSection');
+            });
+            document.getElementById('emergencyNav').addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleSection('emergencySection');
+            });
+            document.getElementById('medicationForm').addEventListener('submit', handleAddMedication);
+            document.getElementById('videoForm').addEventListener('submit', handleAddVideo);
+        });
+    </script>
+</body>
+</html>
+
+
+this is doc.html
+
+---------------------------------------
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALZO - Caregiver Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2D5BFF',
+                        secondary: '#FF3B3B'
+                    },
+                    borderRadius: {
+                        'none': '0px',
+                        'sm': '4px',
+                        DEFAULT: '8px',
+                        'md': '12px',
+                        'lg': '16px',
+                        'xl': '20px',
+                        '2xl': '24px',
+                        '3xl': '32px',
+                        'full': '9999px',
+                        'button': '8px'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :where([class^="ri-"])::before { content: "\f3c2"; }
+        .patient-card:hover {
+            transform: translateY(-4px);
+            transition: all 0.3s ease;
+        }
+        .notification-dot {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.9; }
+            50% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.9; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex h-screen">
+        <aside class="w-64 bg-white shadow-lg">
+            <div class="p-4 border-b">
+                <div class="font-[''] text-2xl text-primary">ALZO</div>
+            </div>
+            <div class="p-4">
+                <div class="flex items-center mb-6">
+                    <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                        <i class="ri-user-line text-xl"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="font-medium">Name ---</p>
+                        <p class="text-sm text-gray-500">Lead Caregiver</p>
+                    </div>
+                </div>
+                <nav>
+                    <a href="#" class="flex items-center p-3 mb-2 bg-primary bg-opacity-10 text-primary rounded-button">
+                        <i class="ri-dashboard-line mr-3"></i>
+                        Dashboard
+                    </a>
+                    <a href="#" class="flex items-center p-3 mb-2 hover:bg-gray-100 rounded-button">
+                        <i class="ri-user-heart-line mr-3"></i>
+                        Patients
+                    </a>
+                    <a href="#" class="flex items-center p-3 mb-2 hover:bg-gray-100 rounded-button">
+                        <i class="ri-message-3-line mr-3"></i>
+                        Messages
+                    </a>
+                    <a href="#" class="flex items-center p-3 mb-2 hover:bg-gray-100 rounded-button">
+                        <i class="ri-calendar-line mr-3"></i>
+                        Calendar
+                    </a>
+                    <a href="#" class="flex items-center p-3 mb-2 hover:bg-gray-100 rounded-button">
+                        <i class="ri-book-read-line mr-3"></i>
+                        Resources
+                    </a>
+                    <a href="#" class="flex items-center p-3 hover:bg-gray-100 rounded-button">
+                        <i class="ri-settings-line mr-3"></i>
+                        Settings
+                    </a>
+                </nav>
+            </div>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto">
+            <header class="bg-white shadow-sm">
+                <div class="flex items-center justify-between px-6 py-4">
+                    <div class="flex items-center flex-1 max-w-xl">
+                        <div class="relative w-full">
+                            <input type="text" placeholder="Search patients, tasks or resources..." class="w-full pl-10 pr-4 py-2 border rounded-button text-sm">
+                            <i class="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center relative">
+                            <i class="ri-notification-3-line"></i>
+                            <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full notification-dot"></span>
+                        </button>
+                        <button class="px-4 py-2 bg-secondary text-white rounded-button whitespace-nowrap flex items-center">
+                            <i class="ri-alarm-warning-line mr-2"></i>
+                            Emergency SOS
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="p-6">
+                <div class="mb-8">
+                    <h1 class="text-2xl font-semibold mb-2">Welcome back, Name--!</h1>
+                    <p class="text-gray-600">Here's what's happening with your patients today</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-medium">Active Patients</h3>
+                            <span class="text-2xl font-semibold text-primary">12</span>
+                        </div>
+                        <div id="activePatientChart" class="h-48"></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-medium">Medication Adherence</h3>
+                            <span class="text-2xl font-semibold text-green-500">87%</span>
+                        </div>
+                        <div id="medicationChart" class="h-48"></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-medium">Daily Tasks</h3>
+                            <span class="text-2xl font-semibold text-orange-500">8/10</span>
+                        </div>
+                        <div id="tasksChart" class="h-48"></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2">
+                        <h2 class="text-xl font-semibold mb-4">Patient Overview</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="patient-card bg-white p-4 rounded-lg shadow-sm cursor-pointer">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                                        <i class="ri-user-smile-line text-blue-500"></i>
+                                    </div>
+                                    <div class="ml-3">
+                                        <h4 class="font-medium">-----------</h4>
+                                        <p class="text-sm text-gray-500">Age: 72 • Room 201</p>
+                                    </div>
+                                    <span class="ml-auto px-2 py-1 bg-green-100 text-green-700 text-sm rounded-full">Stable</span>
+                                </div>
+                                <div class="flex justify-between text-sm mb-3">
+                                    <span>Blood Pressure</span>
+                                    <span class="font-medium">120/80</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span>Last Check</span>
+                                    <span class="font-medium">30 mins ago</span>
+                                </div>
+                            </div>
+
+                            <div class="patient-card bg-white p-4 rounded-lg shadow-sm cursor-pointer">
+                                <div class="flex items-center mb-4">
+                                    <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                                        <i class="ri-user-smile-line text-purple-500"></i>
+                                    </div>
+                                    <div class="ml-3">
+                                        <h4 class="font-medium">------------</h4>
+                                        <p class="text-sm text-gray-500">Age: 68 • Room 205</p>
+                                    </div>
+                                    <span class="ml-auto px-2 py-1 bg-yellow-100 text-yellow-700 text-sm rounded-full">Check Required</span>
+                                </div>
+                                <div class="flex justify-between text-sm mb-3">
+                                    <span>Blood Pressure</span>
+                                    <span class="font-medium">135/85</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span>Last Check</span>
+                                    <span class="font-medium">2 hours ago</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-sm p-4">
+                        <h2 class="text-xl font-semibold mb-4">Recent Alerts</h2>
+                        <div class="space-y-4">
+                            <div class="flex items-center p-3 bg-red-50 rounded-lg">
+                                <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                                    <i class="ri-error-warning-line text-red-500"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium">Missed Medication</p>
+                                    <p class="text-xs text-gray-500">Robert Thompson - 30 mins ago</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center p-3 bg-yellow-50 rounded-lg">
+                                <div class="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center">
+                                    <i class="ri-timer-line text-yellow-500"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium">Check-up Due</p>
+                                    <p class="text-xs text-gray-500">Elizabeth Davis - 1 hour ago</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center p-3 bg-green-50 rounded-lg">
+                                <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                                    <i class="ri-check-line text-green-500"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium">Task Completed</p>
+                                    <p class="text-xs text-gray-500">Morning Rounds - 2 hours ago</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const mockData = {
+            activePatients: {
+                dates: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                values: [10, 11, 12, 12, 11, 10, 12]
+            },
+            medicationAdherence: {
+                categories: ['Morning', 'Afternoon', 'Evening'],
+                values: [90, 85, 86]
+            },
+            tasks: {
+                completed: 8,
+                total: 10
+            }
+        };
+
+        const activePatientChart = echarts.init(document.getElementById('activePatientChart'));
+        activePatientChart.setOption({
+            animation: false,
+            grid: { top: 10, right: 10, bottom: 20, left: 30 },
+            xAxis: {
+                type: 'category',
+                data: mockData.activePatients.dates,
+                axisLine: { show: false },
+                axisTick: { show: false }
+            },
+            yAxis: {
+                type: 'value',
+                axisLine: { show: false },
+                axisTick: { show: false },
+                splitLine: { lineStyle: { color: '#f0f0f0' } }
+            },
+            series: [{
+                data: mockData.activePatients.values,
+                type: 'line',
+                smooth: true,
+                symbol: 'none',
+                lineStyle: { color: 'rgba(87, 181, 231, 1)' },
+                areaStyle: {
+                    color: {
+                        type: 'linear',
+                        x: 0, y: 0, x2: 0, y2: 1,
+                        colorStops: [{
+                            offset: 0,
+                            color: 'rgba(87, 181, 231, 0.2)'
+                        }, {
+                            offset: 1,
+                            color: 'rgba(87, 181, 231, 0)'
+                        }]
+                    }
+                }
+            }]
+        });
+
+        const medicationChart = echarts.init(document.getElementById('medicationChart'));
+        medicationChart.setOption({
+            animation: false,
+            grid: { top: 10, right: 10, bottom: 20, left: 30 },
+            xAxis: {
+                type: 'category',
+                data: mockData.medicationAdherence.categories,
+                axisLine: { show: false },
+                axisTick: { show: false }
+            },
+            yAxis: {
+                type: 'value',
+                max: 100,
+                axisLine: { show: false },
+                axisTick: { show: false },
+                splitLine: { lineStyle: { color: '#f0f0f0' } }
+            },
+            series: [{
+                data: mockData.medicationAdherence.values,
+                type: 'bar',
+                barWidth: '30%',
+                itemStyle: {
+                    color: 'rgba(141, 211, 199, 1)',
+                    borderRadius: [4, 4, 0, 0]
+                }
+            }]
+        });
+
+        const tasksChart = echarts.init(document.getElementById('tasksChart'));
+        tasksChart.setOption({
+            animation: false,
+            series: [{
+                type: 'pie',
+                radius: ['65%', '80%'],
+                avoidLabelOverlap: false,
+                label: { show: false },
+                data: [
+                    { value: mockData.tasks.completed, name: 'Completed', itemStyle: { color: 'rgba(251, 191, 114, 1)' } },
+                    { value: mockData.tasks.total - mockData.tasks.completed, name: 'Remaining', itemStyle: { color: '#f0f0f0' } }
+                ]
+            }]
+        });
+
+        window.addEventListener('resize', () => {
+            activePatientChart.resize();
+            medicationChart.resize();
+            tasksChart.resize();
+        });
+    </script>
+</body>
+</html>
+
+
+this is care.html 
+
+
+
+, now after fixing , give me complete codes, dont change UI and any other functionality , just fix errors , dont add password hashing ,

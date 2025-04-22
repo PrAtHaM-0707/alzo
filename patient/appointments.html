@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALZO - Patient Appointments</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#57B5E7',
+                        secondary: '#8DD3C7',
+                        card: '#F9FAFB'
+                    },
+                    borderRadius: {
+                        'none': '0px',
+                        'sm': '4px',
+                        DEFAULT: '8px',
+                        'md': '12px',
+                        'lg': '16px',
+                        'xl': '20px',
+                        '2xl': '24px',
+                        '3xl': '32px',
+                        'full': '9999px',
+                        'button': '8px',
+                        'card': '12px'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .card { background-color: #F9FAFB; border-radius: 12px; padding: 16px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+        .form-container { transition: all 0.3s ease; }
+        .form-container:hover { transform: translateY(-2px); }
+        .appointment-card { transition: all 0.3s ease; }
+        .appointment-card:hover { background-color: #f3f4f6; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex">
+    <aside class="fixed top-0 left-0 w-64 h-full bg-white shadow-lg">
+        <div class="py-6 px-4">
+            <div class="text-2xl font-semibold text-primary mb-8">ALZO</div>
+            <nav class="space-y-4">
+                <a href="/patient/pat.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-home-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Home</span>
+                </a>
+                <button class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-brain-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Tests</span>
+                </button>
+                <button class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-medicine-bottle-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Medications</span>
+                </button>
+                <button class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-video-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Videos</span>
+                </button>
+                <a href="/patient/appointments.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-primary bg-opacity-10">
+                    <div class="w-10 h-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center">
+                        <i class="ri-calendar-line text-lg text-primary"></i>
+                    </div>
+                    <span class="text-sm text-primary font-medium">Appointments</span>
+                </a>
+                <button onclick="openSosModal()" class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-alarm-warning-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Emergency</span>
+                </button>
+                <!-- <a href="/patient/settings.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-settings-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Settings</span>
+                </a> -->
+                <button id="logoutButton" class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-logout-box-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Logout</span>
+                </button>
+            </nav>
+        </div>
+    </aside>
+    <div class="flex-1 ml-64 max-w-7xl mx-auto px-4 py-8">
+        <h1 class="text-2xl font-semibold text-gray-900 mb-6">Appointments</h1>
+        <div class="card mb-8 form-container">
+            <h2 class="text-lg font-semibold mb-4">Book an Appointment</h2>
+            <form id="appointmentForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="doctor" class="block text-gray-700 font-medium mb-2 text-sm">Select Doctor</label>
+                    <select id="doctor" name="doctor" class="w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm" required>
+                        <option value="">Select a doctor</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="date" class="block text-gray-700 font-medium mb-2 text-sm">Date</label>
+                    <input type="date" id="date" name="date" class="w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm" required />
+                </div>
+                <div>
+                    <label for="time" class="block text-gray-700 font-medium mb-2 text-sm">Time</label>
+                    <input type="time" id="time" name="time" class="w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm" required />
+                </div>
+                <div class="md:col-span-2">
+                    <label for="reason" class="block text-gray-700 font-medium mb-2 text-sm">Reason</label>
+                    <textarea id="reason" name="reason" class="w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm" rows="3" required></textarea>
+                </div>
+                <div class="md:col-span-2">
+                    <div id="errorMessage" class="text-red-500 text-center text-sm mb-4 hidden"></div>
+                    <button type="submit" id="submitButton" class="w-full bg-primary text-white py-2 rounded-button font-semibold hover:bg-primary/90 transition-colors">Book Appointment</button>
+                </div>
+            </form>
+        </div>
+        <div class="card">
+            <h2 class="text-lg font-semibold mb-4">Your Appointments</h2>
+            <div id="appointmentsList" class="space-y-4"></div>
+        </div>
+    </div>
+    <script>
+        async function checkAuth() {
+            const token = localStorage.getItem('token');
+            console.log('Checking auth, token:', token ? 'Present' : 'Missing');
+            if (!token) {
+                console.log('No token found, redirecting to /login');
+                window.location.href = '/login';
+                return false;
+            }
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                console.log('Fetch /api/auth/me status:', response.status);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.log('Fetch /api/auth/me error:', errorData);
+                    throw new Error(errorData.message || `HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                console.log('Fetch /api/auth/me response:', data);
+                if (data.role !== 'patient') {
+                    console.log('Role is not patient, redirecting to /role:', data.role);
+                    window.location.href = '/role';
+                    return false;
+                }
+                return data;
+            } catch (err) {
+                console.error('Auth error:', err.message);
+                console.log('Redirecting to /login due to auth failure');
+                window.location.href = '/login';
+                return false;
+            }
+        }
+
+        async function loadDoctors() {
+            try {
+                const response = await fetch('/api/auth/doctors', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to fetch doctors');
+                }
+                const doctors = await response.json();
+                const doctorSelect = document.getElementById('doctor');
+                doctorSelect.innerHTML = '<option value="">Select a doctor</option>' + doctors
+                    .map(doctor => `<option value="${doctor._id}">Dr. ${doctor.name}${doctor.specialty ? ' - ' + doctor.specialty : ''}</option>`)
+                    .join('');
+            } catch (err) {
+                console.error('Load doctors error:', err.message);
+                document.getElementById('doctor').innerHTML = '<option value="">Error loading doctors</option>';
+            }
+        }
+
+        async function loadAppointments() {
+            try {
+                const response = await fetch('/api/auth/patient/appointments', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to fetch appointments');
+                }
+                const appointments = await response.json();
+                const appointmentsList = document.getElementById('appointmentsList');
+                appointmentsList.innerHTML = appointments.map(appointment => `
+                    <div class="appointment-card p-4 rounded-md border border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-medium text-gray-900">Dr. ${appointment.doctorId.name}</p>
+                                <p class="text-sm text-gray-500">${new Date(appointment.date).toLocaleDateString()} at ${appointment.time}</p>
+                                <p class="text-sm text-gray-500">${appointment.reason}</p>
+                            </div>
+                            <span class="px-2 py-1 text-xs font-medium rounded-full ${
+                                appointment.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                appointment.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                'bg-yellow-100 text-yellow-700'
+                            }">${appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Load appointments error:', err.message);
+                document.getElementById('appointmentsList').innerHTML = '<p class="text-sm text-red-500">Failed to load appointments.</p>';
+            }
+        }
+
+        function handleLogout() {
+            console.log('Logging out, clearing localStorage');
+            localStorage.removeItem('token');
+            localStorage.removeItem('activeRole');
+            window.location.href = '/login';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth().then(() => {
+                loadDoctors();
+                loadAppointments();
+                document.getElementById('appointmentForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const form = e.target;
+                    const submitButton = document.getElementById('submitButton');
+                    const errorMessage = document.getElementById('errorMessage');
+                    errorMessage.classList.add('hidden');
+                    submitButton.textContent = 'Booking...';
+                    submitButton.disabled = true;
+                    try {
+                        const response = await fetch('/api/auth/patient/appointments', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            },
+                            body: JSON.stringify({
+                                doctorId: form.doctor.value,
+                                date: form.date.value,
+                                time: form.time.value,
+                                reason: form.reason.value
+                            })
+                        });
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.message || 'Failed to book appointment');
+                        }
+                        loadAppointments();
+                        form.reset();
+                        submitButton.textContent = 'Booked!';
+                        setTimeout(() => {
+                            submitButton.textContent = 'Book Appointment';
+                            submitButton.disabled = false;
+                        }, 1000);
+                    } catch (err) {
+                        console.error('Book appointment error:', err.message);
+                        errorMessage.textContent = err.message || 'An error occurred. Please try again.';
+                        errorMessage.classList.remove('hidden');
+                        submitButton.textContent = 'Book Appointment';
+                        submitButton.disabled = false;
+                    }
+                });
+                document.getElementById('logoutButton').addEventListener('click', handleLogout);
+            });
+        });
+    </script>
+</body>
+</html>

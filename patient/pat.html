@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALZO - Patient Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#57B5E7',
+                        secondary: '#8DD3C7',
+                        card: '#F9FAFB'
+                    },
+                    borderRadius: {
+                        button: '8px',
+                        card: '12px'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Pacifico', 'cursive']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .card { background-color: #F9FAFB; border-radius: 12px; padding: 16px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+        .checkbox-custom { appearance: none; width: 20px; height: 20px; border: 2px solid #D1D5DB; border-radius: 4px; background-color: white; cursor: pointer; }
+        .checkbox-custom:checked { background-color: #57B5E7; border-color: #57B5E7; }
+        .checkbox-custom:checked::after { content: '✓'; color: white; font-size: 14px; text-align: center; display: block; }
+        .disabled-link { pointer-events: none; opacity: 0.5; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex">
+    <aside class="fixed top-0 left-0 w-64 h-full bg-white shadow-lg">
+        <div class="py-6 px-4">
+            <div class="text-2xl font-display text-primary mb-8">ALZO</div>
+            <nav class="space-y-4">
+                <a href="/patient/pat.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-primary bg-opacity-10">
+                    <div class="w-10 h-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center">
+                        <i class="ri-home-line text-lg text-primary"></i>
+                    </div>
+                    <span class="text-sm text-primary font-medium">Home</span>
+                </a>
+                <button class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left disabled-link" title="Coming soon">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-brain-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Tests</span>
+                </button>
+                <button class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left disabled-link" title="Coming soon">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-medicine-bottle-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Medications</span>
+                </button>
+                <button class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left disabled-link" title="Coming soon">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-video-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Videos</span>
+                </button>
+                <a href="/patient/appointments.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg" title="Coming soon">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-calendar-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Appointments</span>
+                </a>
+                <button onclick="sendSosAlert()" class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-alarm-warning-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Emergency</span>
+                </button>
+                <!-- <a href="/patient/settings.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg " title="Coming soon">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-settings-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Settings</span>
+                </a> -->
+                <button id="logoutButton" class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-logout-box-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Logout</span>
+                </button>
+            </nav>
+        </div>
+    </aside>
+    <div class="flex-1 ml-64 max-w-7xl mx-auto px-4 py-8">
+        <header class="py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="text-2xl font-semibold">
+                    <span id="greeting">Good morning</span>, <span id="userName">Patient</span>
+                </div>
+                <div class="text-lg text-gray-600" id="currentTime">8:30 AM</div>
+            </div>
+            <button onclick="sendSosAlert()" class="bg-red-500 text-white px-4 py-2 rounded-button font-semibold hover:bg-red-600">
+                <i class="ri-alarm-warning-line mr-2"></i>SOS
+            </button>
+        </header>
+        <div id="sosFeedback" class="text-center text-sm mb-4 hidden"></div>
+        <main class="grid grid-cols-2 gap-6">
+            <div class="card">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold">Today's Medications</h2>
+                    <span class="text-sm text-gray-500" id="remainingMedications">0 remaining</span>
+                </div>
+                <div id="medicationList" class="space-y-2"></div>
+            </div>
+            <div class="card">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold">Memory Test</h2>
+                    <button class="text-sm text-primary font-medium disabled-link" title="Coming soon">Start Test</button>
+                </div>
+                <div class="text-sm text-gray-500">Feature coming soon</div>
+            </div>
+            <div class="card">
+                <h2 class="text-lg font-semibold mb-4">Educational Videos</h2>
+                <div id="videoList" class="space-y-2"></div>
+            </div>
+            <div class="card">
+                <h2 class="text-lg font-semibold mb-4">Location Tracking</h2>
+                <div id="locationMap" class="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500 text-sm">Feature coming soon</div>
+            </div>
+        </main>
+    </div>
+    <script>
+        async function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.log('No token found, redirecting to /login');
+                window.location.href = '/login';
+                return null;
+            }
+            try {
+                console.log('Checking auth with token');
+                const response = await fetch('/api/auth/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Auth check failed:', errorData.message);
+                    throw new Error(errorData.message || 'Authentication failed');
+                }
+                const data = await response.json();
+                console.log('Auth check response:', data);
+                if (data.role !== 'patient') {
+                    console.log('User role is not patient:', data.role);
+                    window.location.href = '/role';
+                    return null;
+                }
+                return data;
+            } catch (err) {
+                console.error('Auth error:', err.message);
+                localStorage.removeItem('token');
+                window.location.href = '/login';
+                return null;
+            }
+        }
+
+        async function loadUserData() {
+            const userData = await checkAuth();
+            if (!userData) return;
+            document.getElementById('userName').textContent = userData.name || 'Patient';
+            const hour = new Date().getHours();
+            const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+            document.getElementById('greeting').textContent = greeting;
+            document.getElementById('currentTime').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        async function loadMedications() {
+            try {
+                const response = await fetch('/api/auth/patient/medications', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to fetch medications');
+                }
+                const medications = await response.json();
+                const medicationList = document.getElementById('medicationList');
+                const remaining = medications.filter(med => !med.taken).length;
+                document.getElementById('remainingMedications').textContent = `${remaining} remaining`;
+                medicationList.innerHTML = medications.length ? medications.map(med => `
+                    <div class="flex items-center justify-between p-2 bg-white rounded-md">
+                        <div class="flex items-center">
+                            <input type="checkbox" class="checkbox-custom" ${med.taken ? 'checked' : ''} onchange="updateMedication('${med._id}', this.checked)">
+                            <div class="ml-3">
+                                <p class="text-sm font-medium">${med.name}</p>
+                                <p class="text-xs text-gray-500">${med.time}</p>
+                            </div>
+                        </div>
+                        <span class="text-xs ${med.taken ? 'text-green-500' : 'text-gray-500'}">${med.taken ? 'Taken' : 'Pending'}</span>
+                    </div>
+                `).join('') : '<p class="text-sm text-gray-500">No medications for today.</p>';
+            } catch (err) {
+                console.error('Load medications error:', err.message);
+                document.getElementById('medicationList').innerHTML = `<p class="text-sm text-red-500">${err.message || 'Failed to load medications.'}</p>`;
+            }
+        }
+
+        async function updateMedication(medicationId, taken) {
+            try {
+                const response = await fetch(`/api/auth/patient/medications/${medicationId}`, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to update medication');
+                }
+                console.log(`Medication ${medicationId} updated to taken: ${taken}`);
+                loadMedications();
+            } catch (err) {
+                console.error('Update medication error:', err.message);
+            }
+        }
+
+        async function loadVideos() {
+            try {
+                const response = await fetch('/api/auth/patient/videos', {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to fetch videos');
+                }
+                const videos = await response.json();
+                const videoList = document.getElementById('videoList');
+                videoList.innerHTML = videos.length ? videos.map(video => `
+                    <div class="p-2 bg-white rounded-md">
+                        <p class="text-sm font-medium">${video.title}</p>
+                        <p class="text-xs text-gray-500">${video.description || 'No description'}</p>
+                        <a href="${video.url}" target="_blank" class="text-sm text-primary hover:underline">Watch Video</a>
+                    </div>
+                `).join('') : '<p class="text-sm text-gray-500">No videos available.</p>';
+            } catch (err) {
+                console.error('Load videos error:', err.message);
+                document.getElementById('videoList').innerHTML = `<p class="text-sm text-red-500">${err.message || 'Failed to load videos.'}</p>`;
+            }
+        }
+
+        async function sendSosAlert() {
+            const feedback = document.getElementById('sosFeedback');
+            feedback.classList.add('hidden');
+            feedback.classList.remove('text-green-500', 'text-red-500');
+            try {
+                console.log('Sending SOS alert');
+                const response = await fetch('/api/auth/patient/sos', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({})
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to send SOS alert');
+                }
+                console.log('SOS alert sent to all doctors');
+                feedback.textContent = 'SOS alert sent to all doctors!';
+                feedback.classList.add('text-green-500');
+                feedback.classList.remove('hidden');
+                setTimeout(() => feedback.classList.add('hidden'), 3000);
+            } catch (err) {
+                console.error('Send SOS error:', err.message);
+                feedback.textContent = err.message || 'Failed to send SOS alert.';
+                feedback.classList.add('text-red-500');
+                feedback.classList.remove('hidden');
+                setTimeout(() => feedback.classList.add('hidden'), 3000);
+            }
+        }
+
+        function handleLogout() {
+            console.log('Logging out');
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, loading patient data');
+            loadUserData();
+            loadMedications();
+            loadVideos();
+            document.getElementById('logoutButton').addEventListener('click', handleLogout);
+        });
+    </script>
+</body>
+</html>

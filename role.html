@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Select Your Role - ALZO Healthcare</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#57B5E7',
+            secondary: '#8DD3C7'
+          },
+          borderRadius: {
+            button: '8px'
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Pacifico', 'cursive']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f9fafb;
+    }
+    .role-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(87, 181, 231, 0.1), 0 4px 6px -2px rgba(87, 181, 231, 0.05);
+    }
+    .error-message {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+      opacity: 0;
+      margin-top: 0;
+    }
+    .error-message.show {
+      max-height: 60px;
+      opacity: 1;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-md">
+    <div class="bg-white rounded-xl shadow-lg p-8">
+      <div class="text-center mb-8">
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">Select Your Role</h1>
+        <p class="text-gray-500">Choose how you want to use ALZO today</p>
+      </div>
+      <div class="space-y-4" id="role-buttons"></div>
+      <div class="error-message text-center text-red-500 text-sm font-medium rounded-lg p-3 bg-red-50" id="error-message"></div>
+    </div>
+    <div class="mt-6 text-center">
+      <a href="mailto:support@alzo.com" class="text-sm text-gray-500 hover:text-primary">Need help? Contact support</a>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.log('No token found, redirecting to /login');
+        window.location.href = '/login';
+        return;
+      }
+
+      const roleData = {
+        patient: {
+          icon: 'ri-user-heart-line',
+          title: 'I am a Patient',
+          description: 'Access your health records and appointments',
+          redirect: '/patient/pat.html'
+        },
+        caregiver: {
+          icon: 'ri-heart-pulse-line',
+          title: 'I am a Caregiver',
+          description: 'Manage care for your loved ones',
+          redirect: '/caregiver/care.html'
+        },
+        doctor: {
+          icon: 'ri-stethoscope-line',
+          title: 'I am a Doctor',
+          description: 'Access patient information and schedules',
+          redirect: '/doctor/doc.html'
+        }
+      };
+
+      function createRoleButtons(roles) {
+        const container = document.getElementById('role-buttons');
+        container.innerHTML = '';
+        roles.forEach(role => {
+          if (roleData[role]) {
+            const { icon, title, description, redirect } = roleData[role];
+            const button = document.createElement('button');
+            button.className = 'role-btn w-full flex items-center p-4 bg-white border border-gray-200 rounded-button text-left transition-all duration-300 hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30';
+            button.innerHTML = `
+              <div class="w-12 h-12 flex items-center justify-center bg-primary/10 rounded-full mr-4">
+                <i class="${icon} text-xl text-primary"></i>
+              </div>
+              <div>
+                <span class="font-medium text-gray-800">${title}</span>
+                <div class="text-sm text-gray-500">${description}</div>
+              </div>
+              <div class="ml-auto">
+                <i class="ri-arrow-right-line text-gray-400"></i>
+              </div>
+            `;
+            button.addEventListener('click', async () => {
+              console.log(`Selecting role: ${role}`);
+              const errorElement = document.getElementById('error-message');
+              errorElement.classList.remove('show');
+              try {
+                const response = await fetch('/api/auth/select-role', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify({ role })
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                  throw new Error(data.message || 'Failed to select role');
+                }
+                console.log(`Role selected: ${role}, redirecting to ${redirect}`);
+                window.location.href = redirect;
+              } catch (error) {
+                console.error('Role selection error:', error.message);
+                errorElement.textContent = error.message || 'Unable to process role selection. Please try again.';
+                errorElement.classList.add('show');
+                setTimeout(() => errorElement.classList.remove('show'), 3000);
+              }
+            });
+            container.appendChild(button);
+          }
+        });
+      }
+
+      async function checkUserRole() {
+        console.log('Checking user role with /api/auth/me');
+        try {
+          const response = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.message || 'Failed to fetch user data');
+          }
+          const data = await response.json();
+          console.log('User data:', data);
+          if (data.role && roleData[data.role]) {
+            console.log(`Role already set: ${data.role}, redirecting to ${roleData[data.role].redirect}`);
+            window.location.href = roleData[data.role].redirect;
+          } else {
+            console.log('No role set, displaying role buttons');
+            createRoleButtons(['patient', 'caregiver', 'doctor']);
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error.message);
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+        }
+      }
+
+      checkUserRole();
+    });
+  </script>
+</body>
+</html>

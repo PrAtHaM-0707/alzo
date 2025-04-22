@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ALZO - Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#6663ff',
+            secondary: '#57B5E7'
+          },
+          borderRadius: {
+            'button': '8px'
+          }
+        },
+        fontFamily: {
+          'sans': ['Inter', 'sans-serif'],
+          'display': ['Pacifico', 'cursive']
+        }
+      }
+    }
+  </script>
+</head>
+<body class="font-sans bg-white">
+  <nav class="top-0 w-full bg-white/95 backdrop-blur-sm z-50 border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16 items-center">
+        <a href="/" class="text-2xl font-display text-primary" aria-label="ALZO Home">ALZO</a>
+        <div class="hidden md:flex items-center space-x-8">
+          <a href="/#features" class="text-gray-700 hover:text-primary" aria-label="Features">Features</a>
+          <a href="/#solutions" class="text-gray-700 hover:text-primary" aria-label="Solutions">Solutions</a>
+          <a href="/#testimonials" class="text-gray-700 hover:text-primary" aria-label="Testimonials">Testimonials</a>
+          <a href="/#pricing" class="text-gray-700 hover:text-primary" aria-label="Pricing">Pricing</a>
+          <a href="/signup" class="bg-primary text-white px-6 py-2 rounded-button hover:bg-primary/90 cursor-pointer whitespace-nowrap" aria-label="Sign Up">Sign Up</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+  <section class="min-h-screen flex items-center bg-gradient-to-br from-white to-blue-50 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+      <div class="text-center md:text-left">
+        <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Login to ALZO</h1>
+        <p class="text-lg text-gray-600 mb-6">Access your account to manage Alzheimer's care.</p>
+      </div>
+      <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg w-full max-w-md mx-auto">
+        <h2 class="text-2xl font-semibold text-gray-900 mb-4 text-center">Login to Your Account</h2>
+        <form id="loginForm">
+          <div class="mb-4">
+            <label for="email" class="block text-gray-700 font-medium mb-2">Email Address</label>
+            <input type="email" id="email" name="email" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary" required />
+          </div>
+          <div class="mb-4">
+            <label for="password" class="block text-gray-700 font-medium mb-2">Password</label>
+            <input type="password" id="password" name="password" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary" required />
+          </div>
+          <div id="errorMessage" class="text-red-500 text-center text-sm mb-4 hidden"></div>
+          <button type="submit" id="loginButton" class="w-full bg-primary text-white py-3 rounded-button font-semibold hover:bg-primary/90">Login</button>
+        </form>
+        <p class="text-center text-gray-600 text-sm mt-4">
+          Don't have an account? <a href="/signup" class="text-primary hover:underline">Sign Up</a>
+        </p>
+        <p class="text-center text-gray-600 text-sm mt-2">
+          <a href="#" class="text-primary hover:underline">Forgot Password?</a>
+        </p>
+      </div>
+    </div>
+  </section>
+  <footer class="bg-gray-900 text-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <p class="text-center text-gray-400 text-sm">© 2025 ALZO. All rights reserved.</p>
+    </div>
+  </footer>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const loginButton = document.getElementById('loginButton');
+      const errorMessage = document.getElementById('errorMessage');
+      errorMessage.classList.add('hidden');
+      loginButton.textContent = 'Logging In';
+      loginButton.disabled = true;
+      loginButton.classList.add('opacity-50', 'cursor-not-allowed');
+      const formData = {
+        email: form.email.value.trim().toLowerCase(),
+        password: form.password.value,
+      };
+      console.log('Login attempt:', formData);
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+        const data = await response.json();
+        console.log('Login response:', data);
+        if (!response.ok) {
+          errorMessage.textContent = data.message || 'Login failed';
+          errorMessage.classList.remove('hidden');
+          loginButton.textContent = 'Login';
+          loginButton.disabled = false;
+          loginButton.classList.remove('opacity-50', 'cursor-not-allowed');
+          return;
+        }
+        localStorage.setItem('token', data.token);
+        if (data.redirect) {
+          console.log(`Redirecting to ${data.redirect}`);
+          window.location.href = data.redirect;
+        } else {
+          errorMessage.textContent = 'Unexpected response from server';
+          errorMessage.classList.remove('hidden');
+          loginButton.textContent = 'Login';
+          loginButton.disabled = false;
+          loginButton.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+      } catch (err) {
+        console.error('Login error:', err.message);
+        errorMessage.textContent = 'An error occurred. Please try again.';
+        errorMessage.classList.remove('hidden');
+        loginButton.textContent = 'Login';
+        loginButton.disabled = false;
+        loginButton.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    });
+  </script>
+</body>
+</html>
