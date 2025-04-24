@@ -69,53 +69,55 @@
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
-    <!-- Patient ID Modal -->
-    <div id="patientIdModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-            <h2 class="text-xl font-semibold mb-4">Add Patient</h2>
+   <div id="patientIdModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h2 class="text-lg sm:text-xl font-semibold mb-4">Add Patient</h2>
             <form id="patientIdForm">
                 <div class="mb-4">
-                    <label for="patientId" class="block text-gray-700 font-medium mb-2 text-sm">Patient ID</label>
-                    <input type="text" id="patientId" name="patientId" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary" required />
+                    <label for="patientId" class="block text-gray-700 font-medium mb-2 text-sm sm:text-base">Patient ID</label>
+                    <input type="text" id="patientId" name="patientId" class="w-full px-4 py-2 sm:py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base" required />
                 </div>
                 <div id="patientIdError" class="text-red-500 text-center text-sm mb-4 hidden"></div>
-                <div class="flex space-x-4">
-                    <button type="button" id="cancelPatientId" class="w-1/2 bg-gray-300 text-gray-700 py-3 rounded-button font-semibold hover:bg-gray-400">Cancel</button>
-                    <button type="submit" id="submitPatientId" class="w-1/2 bg-primary text-white py-3 rounded-button font-semibold hover:bg-primary/90">Add Patient</button>
+                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+                    <button type="button" id="cancelPatientId" class="w-full sm:w-1/2 bg-gray-300 text-gray-700 py-2 sm:py-3 rounded-button font-semibold hover:bg-gray-400">Cancel</button>
+                    <button type="submit" id="submitPatientId" class="w-full sm:w-1/2 bg-primary text-white py-2 sm:py-3 rounded-button font-semibold hover:bg-primary/90">Add Patient</button>
                 </div>
             </form>
         </div>
     </div>
 
     <div class="flex h-screen" id="dashboardContent">
-        <aside class="w-64 bg-white shadow-lg">
-            <div class="p-4 border-b">
-                <div class="font-['Pacifico'] text-2xl text-primary">ALZO</div>
+        <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white shadow-lg transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out z-40 lg:static lg:transform-none">
+            <div class="p-4 border-b flex items-center justify-between">
+                <div class="font-['Pacifico'] text-xl sm:text-2xl text-primary">ALZO</div>
+                <button id="closeSidebar" class="lg:hidden text-gray-700 hover:text-primary focus:outline-none">
+                    <i class="ri-close-line text-xl"></i>
+                </button>
             </div>
             <div class="p-4">
                 <div class="flex items-center mb-6">
-                    <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-                        <i class="ri-user-line text-xl"></i>
+                    <div class="w-10 sm:w-12 h-10 sm:h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                        <i class="ri-user-line text-lg sm:text-xl"></i>
                     </div>
                     <div class="ml-3">
-                        <p id="caregiverName" class="font-medium">Loading...</p>
-                        <p class="text-sm text-gray-500">Caregiver</p>
+                        <p id="caregiverName" class="font-medium text-sm sm:text-base">Loading...</p>
+                        <p class="text-xs sm:text-sm text-gray-500">Caregiver</p>
                     </div>
                 </div>
                 <nav>
-                    <a href="/caregiver/care.html" class="flex items-center p-3 mb-2 bg-primary bg-opacity-10 text-primary rounded-button">
+                    <a href="/caregiver/care.html" class="flex items-center p-3 mb-2 bg-primary bg-opacity-10 text-primary rounded-button text-sm sm:text-base">
                         <i class="ri-dashboard-line mr-3"></i>
                         Dashboard
                     </a>
-                    <a href="/caregiver/patients.html" class="flex items-center p-3 mb-2 hover:bg-gray-100 rounded-button">
+                    <a href="/caregiver/patients.html" class="flex items-center p-3 mb-2 hover:bg-gray-100 rounded-button text-sm sm:text-base">
                         <i class="ri-user-heart-line mr-3"></i>
                         Patients
                     </a>
-                    <a href="/caregiver/profile.html" class="flex items-center p-3 mb-2 hover:bg-gray-100 rounded-button">
+                    <a href="/caregiver/profile.html" class="flex items-center p-3 mb-2 hover:bg-gray-100 rounded-button text-sm sm:text-base">
                         <i class="ri-user-settings-line mr-3"></i>
                         Profile
                     </a>
-                    <button id="logoutButton" class="flex items-center p-3 hover:bg-gray-100 rounded-button w-full text-left">
+                    <button id="logoutButton" class="flex items-center p-3 hover:bg-gray-100 rounded-button w-full text-left text-sm sm:text-base">
                         <i class="ri-logout-box-line mr-3"></i>
                         Logout
                     </button>
@@ -123,78 +125,81 @@
             </div>
         </aside>
 
-        <main class="flex-1 overflow-y-auto">
+        <main class="flex-1 overflow-y-auto lg:ml-0">
             <header class="bg-white shadow-sm">
-                <div class="flex items-center justify-between px-6 py-4">
+                <div class="flex items-center justify-between px-4 sm:px-6 py-4">
                     <div class="flex items-center">
-                        <h1 class="text-xl font-semibold">Caregiver Dashboard</h1>
+                        <button id="openSidebar" class="lg:hidden text-gray-700 hover:text-primary focus:outline-none mr-4">
+                            <i class="ri-menu-line text-xl"></i>
+                        </button>
+                        <h1 class="text-lg sm:text-xl font-semibold">Caregiver Dashboard</h1>
                     </div>
-                    <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2 sm:space-x-4">
                         <div class="relative">
                             <button id="notificationButton" class="flex items-center space-x-2 px-3 py-2 bg-primary text-white rounded-button hover:bg-primary/90 relative">
-                                <i class="ri-notification-3-line"></i>
-                                <span id="notificationCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+                                <i class="ri-notification-3-line text-sm sm:text-base"></i>
+                                <span id="notificationCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 sm:w-5 h-4 sm:h-5 flex items-center justify-center hidden">0</span>
                             </button>
-                            <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-80 bg-card rounded-card shadow-lg z-10 max-h-96 overflow-y-auto">
+                            <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-72 sm:w-80 bg-card rounded-card shadow-lg z-10 max-h-96 overflow-y-auto">
                                 <div class="p-4 border-b flex justify-between items-center">
-                                    <h3 class="font-semibold text-gray-700">Notifications</h3>
-                                    <button id="clearNotificationsButton" class="text-sm text-primary hover:underline">Clear All</button>
+                                    <h3 class="font-semibold text-gray-700 text-sm sm:text-base">Notifications</h3>
+                                    <button id="clearNotificationsButton" class="text-xs sm:text-sm text-primary hover:underline">Clear All</button>
                                 </div>
                                 <div id="notificationList" class="divide-y"></div>
-                                <div class="p-4 text-center text-sm text-gray-500" id="noNotifications">No notifications</div>
+                                <div class="p-4 text-center text-xs sm:text-sm text-gray-500" id="noNotifications">No notifications</div>
                             </div>
                         </div>
-                        <button onclick="openAddPatientModal()" class="px-4 py-2 bg-primary text-white rounded-button font-semibold hover:bg-primary/90">
-                            <i class="ri-user-add-line mr-2"></i>Add Patient
+                        <button onclick="openAddPatientModal()" class="px-3 sm:px-4 py-2 bg-primary text-white rounded-button font-semibold hover:bg-primary/90 text-sm sm:text-base">
+                            <i class="ri-user-add-line mr-1 sm:mr-2 text-sm sm:text-base"></i>Add Patient
                         </button>
                     </div>
                 </div>
             </header>
 
-            <div class="p-6">
-                <div class="mb-8">
-                    <h1 id="welcomeMessage" class="text-2xl font-semibold mb-2">Welcome back, Loading...!</h1>
-                    <p class="text-gray-600">Here's the overview of your managed patients</p>
+            <div class="p-4 sm:p-6">
+                <div class="mb-6 sm:mb-8">
+                    <h1 id="welcomeMessage" class="text-xl sm:text-2xl font-semibold mb-2">Welcome back, Loading...!</h1>
+                    <p class="text-gray-600 text-sm sm:text-base">Here's the overview of your managed patients</p>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-white p-6 rounded-card shadow-sm">
-                        <h3 class="font-medium mb-2">Total Patients</h3>
-                        <p id="totalPatients" class="text-2xl font-semibold text-primary">0</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                    <div class="bg-white p-4 sm:p-6 rounded-card shadow-sm">
+                        <h3 class="font-medium mb-2 text-sm sm:text-base">Total Patients</h3>
+                        <p id="totalPatients" class="text-xl sm:text-2xl font-semibold text-primary">0</p>
                     </div>
-                    <div class="bg-white p-6 rounded-card shadow-sm">
-                        <h3 class="font-medium mb-2">Stable Patients</h3>
-                        <p id="stablePatients" class="text-2xl font-semibold text-green-500">0</p>
+                    <div class="bg-white p-4 sm:p-6 rounded-card shadow-sm">
+                        <h3 class="font-medium mb-2 text-sm sm:text-base">Stable Patients</h3>
+                        <p id="stablePatients" class="text-xl sm:text-2xl font-semibold text-green-500">0</p>
                     </div>
-                    <div class="bg-white p-6 rounded-card shadow-sm">
-                        <h3 class="font-medium mb-2">Critical Patients</h3>
-                        <p id="criticalPatients" class="text-2xl font-semibold text-red-500">0</p>
+                    <div class="bg-white p-4 sm:p-6 rounded-card shadow-sm">
+                        <h3 class="font-medium mb-2 text-sm sm:text-base">Critical Patients</h3>
+                        <p id="criticalPatients" class="text-xl sm:text-2xl font-semibold text-red-500">0</p>
                     </div>
-                    <div class="bg-white p-6 rounded-card shadow-sm">
-                        <h3 class="font-medium mb-2">Active SOS Alerts</h3>
-                        <p id="sosAlerts" class="text-2xl font-semibold text-orange-500">0</p>
+                    <div class="bg-white p-4 sm:p-6 rounded-card shadow-sm">
+                        <h3 class="font-medium mb-2 text-sm sm:text-base">Active SOS Alerts</h3>
+                        <p id="sosAlerts" class="text-xl sm:text-2xl font-semibold text-orange-500">0</p>
                     </div>
-                    <div class="bg-white p-6 rounded-card shadow-sm">
-                        <h3 class="font-medium mb-2">Recovering Patients</h3>
-                        <p id="recoveringPatients" class="text-2xl font-semibold text-blue-500">0</p>
+                    <div class="bg-white p-4 sm:p-6 rounded-card shadow-sm">
+                        <h3 class="font-medium mb-2 text-sm sm:text-base">Recovering Patients</h3>
+                        <p id="recoveringPatients" class="text-xl sm:text-2xl font-semibold text-blue-500">0</p>
                     </div>
-                    <div class="bg-white p-6 rounded-card shadow-sm">
-                        <h3 class="font-medium mb-2">Under Observation</h3>
-                        <p id="underObservationPatients" class="text-2xl font-semibold text-yellow-500">0</p>
+                    <div class="bg-white p-4 sm:p-6 rounded-card shadow-sm">
+                        <h3 class="font-medium mb-2 text-sm sm:text-base">Under Observation</h3>
+                        <p id="underObservationPatients" class="text-xl sm:text-2xl font-semibold text-yellow-500">0</p>
                     </div>
-                    <div class="bg-white p-6 rounded-card shadow-sm">
-                        <h3 class="font-medium mb-2">Recent Activity</h3>
-                        <p id="recentActivity" class="text-sm text-gray-600">No recent activity</p>
+                    <div class="bg-white p-4 sm:p-6 rounded-card shadow-sm">
+                        <h3 class="font-medium mb-2 text-sm sm:text-base">Recent Activity</h3>
+                        <p id="recentActivity" class="text-xs sm:text-sm text-gray-600">No recent activity</p>
                     </div>
-                    <div class="bg-white p-6 rounded-card shadow-sm">
-                        <h3 class="font-medium mb-2">Pending Tasks</h3>
-                        <p id="pendingTasks" class="text-sm text-gray-600">No pending tasks</p>
+                    <div class="bg-white p-4 sm:p-6 rounded-card shadow-sm">
+                        <h3 class="font-medium mb-2 text-sm sm:text-base">Pending Tasks</h3>
+                        <p id="pendingTasks" class="text-xs sm:text-sm text-gray-600">No pending tasks</p>
                     </div>
                 </div>
 
                 <div>
-                    <h2 class="text-xl font-semibold mb-4">Managed Patients</h2>
-                    <div id="patientsList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <h2 class="text-lg sm:text-xl font-semibold mb-4">Managed Patients</h2>
+                    <div id="patientsList" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <p class="text-sm text-gray-500">No patients added yet</p>
                     </div>
                 </div>
@@ -287,16 +292,16 @@
                 notifications = notifications.slice(-50);
             }
             notificationList.innerHTML = notifications.map(notification => `
-                <div class="p-4 flex items-center justify-between hover:bg-gray-50">
-                    <div class="flex items-center space-x-3">
+                <div class="p-3 sm:p-4 flex items-center justify-between hover:bg-gray-50">
+                    <div class="flex items-center space-x-2 sm:space-x-3">
                         <i class="ri-${
                             notification.type === 'SOS Alert' ? 'alarm-warning-line' :
                             notification.type === 'Patient Condition' ? 'heart-pulse-line' :
                             'user-add-line'
-                        } text-primary"></i>
+                        } text-primary text-sm sm:text-base"></i>
                         <div>
-                            <p class="font-medium text-gray-700">${notification.type}</p>
-                            <p class="text-sm text-gray-500">${notification.message}</p>
+                            <p class="font-medium text-gray-700 text-sm sm:text-base">${notification.type}</p>
+                            <p class="text-xs sm:text-sm text-gray-500">${notification.message}</p>
                             <p class="text-xs text-gray-400">${notification.time}</p>
                         </div>
                     </div>
@@ -458,14 +463,14 @@
                 patientsList.innerHTML = patients.length > 0 ? patients.map(patient => `
                     <a href="/caregiver/patient.html?patientId=${patient.patientId}" class="patient-card bg-card p-4 rounded-card shadow-sm cursor-pointer">
                         <div class="flex items-center">
-                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                <i class="ri-user-smile-line text-blue-500"></i>
+                            <div class="w-8 sm:w-10 h-8 sm:h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                <i class="ri-user-smile-line text-blue-500 text-sm sm:text-base"></i>
                             </div>
-                            <div class="ml-3">
-                                <h4 class="font-medium">${patient.name}</h4>
-                                <p class="text-sm text-gray-500">ID: ${patient.patientId}</p>
+                            <div class="ml-2 sm:ml-3">
+                                <h4 class="font-medium text-sm sm:text-base">${patient.name}</h4>
+                                <p class="text-xs sm:text-sm text-gray-500">ID: ${patient.patientId}</p>
                             </div>
-                            <span class="ml-auto px-2 py-1 text-sm rounded-full ${
+                            <span class="ml-auto px-2 py-1 text-xs sm:text-sm rounded-full ${
                                 patient.condition === 'Stable' ? 'bg-green-100 text-green-700' :
                                 patient.condition === 'Critical' ? 'bg-red-100 text-red-700' :
                                 patient.condition === 'Recovering' ? 'bg-blue-100 text-blue-700' :
@@ -503,6 +508,28 @@
             document.getElementById('patientIdForm').addEventListener('submit', handlePatientIdSubmit);
             document.getElementById('cancelPatientId').addEventListener('click', closeAddPatientModal);
             document.getElementById('logoutButton').addEventListener('click', handleLogout);
+
+            // Sidebar toggle
+            const openSidebarButton = document.getElementById('openSidebar');
+            const closeSidebarButton = document.getElementById('closeSidebar');
+            const sidebar = document.getElementById('sidebar');
+
+            openSidebarButton.addEventListener('click', () => {
+                sidebar.classList.remove('-translate-x-full');
+                document.body.classList.add('overflow-hidden');
+            });
+
+            closeSidebarButton.addEventListener('click', () => {
+                sidebar.classList.add('-translate-x-full');
+                document.body.classList.remove('overflow-hidden');
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!sidebar.contains(e.target) && !openSidebarButton.contains(e.target) && !sidebar.classList.contains('-translate-x-full')) {
+                    sidebar.classList.add('-translate-x-full');
+                    document.body.classList.remove('overflow-hidden');
+                }
+            });
         });
     </script>
 </body>

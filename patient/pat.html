@@ -72,13 +72,7 @@
                     </div>
                     <span class="text-sm text-primary font-medium">Home</span>
                 </a>
-                <!-- <button class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left" title="Coming soon">
-                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                        <i class="ri-brain-line text-lg text-gray-600"></i>
-                    </div>
-                    <span class="text-sm text-gray-600">Tests</span>
-                </button> -->
-                <a href="/patient/games/tests.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg">
+              <a href="/patient/games/tests.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg">
                     <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
                         <i class="ri-brain-line text-lg text-gray-600"></i>
                     </div>
@@ -178,7 +172,6 @@
         </main>
     </div>
     <script>
-        // Notification System
         let notifications = [];
         const notificationButton = document.getElementById('notificationButton');
         const notificationDropdown = document.getElementById('notificationDropdown');
@@ -186,7 +179,7 @@
         const notificationCount = document.getElementById('notificationCount');
         const noNotifications = document.getElementById('noNotifications');
 
-        // Load notifications from LocalStorage for the current user
+        
         function loadNotificationsFromStorage(userEmail) {
             const storedNotifications = localStorage.getItem(`notifications_${userEmail}`);
             if (storedNotifications) {
@@ -194,19 +187,18 @@
                 const now = new Date();
                 notifications = notifications.filter(n => {
                     const notificationTime = new Date(n.time);
-                    return (now - notificationTime) / (1000 * 60 * 60 * 24) <= 7; // Keep notifications from last 7 days
+                    return (now - notificationTime) / (1000 * 60 * 60 * 24) <= 7;
                 });
                 saveNotificationsToStorage(userEmail);
                 updateNotifications();
             }
         }
 
-        // Save notifications to LocalStorage for the current user
+        
         function saveNotificationsToStorage(userEmail) {
             localStorage.setItem(`notifications_${userEmail}`, JSON.stringify(notifications));
         }
 
-        // Clear notifications and remove from LocalStorage
         function clearNotifications(userEmail) {
             notifications = [];
             localStorage.removeItem(`notifications_${userEmail}`);
@@ -255,7 +247,7 @@
 
         function updateNotifications() {
             if (notifications.length > 50) {
-                notifications = notifications.slice(-50); // Keep only the latest 50 notifications
+                notifications = notifications.slice(-50); 
             }
             notificationList.innerHTML = notifications.map(notification => `
                 <div class="p-4 flex items-center justify-between hover:bg-gray-50">
@@ -274,7 +266,6 @@
             notificationCount.classList.toggle('hidden', notifications.length === 0);
         }
 
-        // Get current user email
         let currentUserEmail = null;
         function getCurrentUserEmail() {
             return currentUserEmail;

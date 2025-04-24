@@ -132,7 +132,6 @@
         </div>
     </div>
     <script>
-        // Authentication and user data
         let currentUserEmail = null;
         async function checkAuth() {
             const token = localStorage.getItem('token');
@@ -171,8 +170,7 @@
             document.getElementById('currentTime').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
 
-        // Load and display game records
-        function loadGameRecords() {
+       function loadGameRecords() {
             const gameRecords = JSON.parse(localStorage.getItem('gameRecords')) || [];
             const gameRecordsTable = document.getElementById('gameRecordsTable');
             const noRecords = document.getElementById('noRecords');
@@ -185,7 +183,6 @@
 
             noRecords.classList.add('hidden');
             gameRecordsTable.innerHTML = gameRecords.map(record => {
-                // Format the results based on the game type
                 let resultText = '';
                 switch (record.game) {
                     case 'clock':
@@ -207,8 +204,7 @@
                         resultText = 'Unknown game';
                 }
 
-                // Format the timestamp
-                const date = new Date(record.timestamp).toLocaleString();
+               const date = new Date(record.timestamp).toLocaleString();
 
                 return `
                     <tr class="hover:bg-gray-50">
@@ -220,14 +216,12 @@
             }).join('');
         }
 
-        // Clear all game records
-        function clearGameRecords() {
+       function clearGameRecords() {
             localStorage.removeItem('gameRecords');
             loadGameRecords();
         }
 
-        // Logout functionality
-        function handleLogout() {
+       function handleLogout() {
             localStorage.removeItem('token');
             window.location.href = '/login';
         }

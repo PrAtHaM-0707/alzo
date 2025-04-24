@@ -198,7 +198,6 @@
             try {
                 const name = form.name.value.trim();
                 const sosNumber = form.sosNumber.value.trim();
-                // Update name
                 if (name) {
                     const nameResponse = await fetch('/api/auth/update-name', {
                         method: 'PATCH',
@@ -214,7 +213,6 @@
                     }
                     console.log('Name updated:', name);
                 }
-                // Update SOS number
                 if (sosNumber) {
                     const sosResponse = await fetch('/api/auth/update-sos', {
                         method: 'PATCH',

@@ -70,34 +70,37 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div class="flex h-screen" id="dashboardContent">
-        <aside class="w-64 bg-white shadow-lg">
-            <div class="p-4 border-b">
-                <div class="font-['Pacifico'] text-2xl text-primary">ALZO</div>
+        <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white shadow-lg transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out z-40 lg:static lg:transform-none">
+            <div class="p-4 border-b flex items-center justify-between">
+                <div class="font-['Pacifico'] text-xl sm:text-2xl text-primary">ALZO</div>
+                <button id="closeSidebar" class="lg:hidden text-gray-700 hover:text-primary focus:outline-none">
+                    <i class="ri-close-line text-xl"></i>
+                </button>
             </div>
             <div class="p-4">
                 <div class="flex items-center mb-6">
-                    <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-                        <i class="ri-user-line text-xl"></i>
+                    <div class="w-10 sm:w-12 h-10 sm:h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                        <i class="ri-user-line text-lg sm:text-xl"></i>
                     </div>
                     <div class="ml-3">
-                        <p id="caregiverName" class="font-medium">Loading...</p>
-                        <p class="text-sm text-gray-500">Caregiver</p>
+                        <p id="caregiverName" class="font-medium text-sm sm:text-base">Loading...</p>
+                        <p class="text-xs sm:text-sm text-gray-500">Caregiver</p>
                     </div>
                 </div>
                 <nav>
-                    <a href="/caregiver/care.html" class="flex items-center p-3 mb-2 hover:bg-gray-100 rounded-button">
+                    <a href="/caregiver/care.html" class="flex items-center p-3 mb-2 hover:bg-gray-100 rounded-button text-sm sm:text-base">
                         <i class="ri-dashboard-line mr-3"></i>
                         Dashboard
                     </a>
-                    <a href="/caregiver/patients.html" class="flex items-center p-3 mb-2 hover:bg-gray-100 rounded-button">
+                    <a href="/caregiver/patients.html" class="flex items-center p-3 mb-2 bg-primary bg-opacity-10 text-primary rounded-button text-sm sm:text-base">
                         <i class="ri-user-heart-line mr-3"></i>
                         Patients
                     </a>
-                    <a href="/caregiver/profile.html" class="flex items-center p-3 mb-2 hover:bg-gray-100 rounded-button">
+                    <a href="/caregiver/profile.html" class="flex items-center p-3 mb-2 hover:bg-gray-100 rounded-button text-sm sm:text-base">
                         <i class="ri-user-settings-line mr-3"></i>
                         Profile
                     </a>
-                    <button id="logoutButton" class="flex items-center p-3 hover:bg-gray-100 rounded-button w-full text-left">
+                    <button id="logoutButton" class="flex items-center p-3 hover:bg-gray-100 rounded-button w-full text-left text-sm sm:text-base">
                         <i class="ri-logout-box-line mr-3"></i>
                         Logout
                     </button>
@@ -105,75 +108,78 @@
             </div>
         </aside>
 
-        <main class="flex-1 overflow-y-auto">
+        <main class="flex-1 overflow-y-auto lg:ml-0">
             <header class="bg-white shadow-sm">
-                <div class="flex items-center justify-between px-6 py-4">
+                <div class="flex items-center justify-between px-4 sm:px-6 py-4">
                     <div class="flex items-center">
-                        <h1 class="text-xl font-semibold">Patient Details</h1>
+                        <button id="openSidebar" class="lg:hidden text-gray-700 hover:text-primary focus:outline-none mr-4">
+                            <i class="ri-menu-line text-xl"></i>
+                        </button>
+                        <h1 class="text-lg sm:text-xl font-semibold">Patient Details</h1>
                     </div>
-                    <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2 sm:space-x-4">
                         <div class="relative">
                             <button id="notificationButton" class="flex items-center space-x-2 px-3 py-2 bg-primary text-white rounded-button hover:bg-primary/90 relative">
-                                <i class="ri-notification-3-line"></i>
-                                <span id="notificationCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+                                <i class="ri-notification-3-line text-sm sm:text-base"></i>
+                                <span id="notificationCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 sm:w-5 h-4 sm:h-5 flex items-center justify-center hidden">0</span>
                             </button>
-                            <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-80 bg-card rounded-card shadow-lg z-10 max-h-96 overflow-y-auto">
-                                <div class="p-4 border-b flex justify-between items-center">
-                                    <h3 class="font-semibold text-gray-700">Notifications</h3>
-                                    <button id="clearNotificationsButton" class="text-sm text-primary hover:underline">Clear All</button>
+                            <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-72 sm:w-80 bg-card rounded-card shadow-lg z-10 max-h-96 overflow-y-auto">
+                                <div class="p-3 sm:p-4 border-b flex justify-between items-center">
+                                    <h3 class="font-semibold text-gray-700 text-sm sm:text-base">Notifications</h3>
+                                    <button id="clearNotificationsButton" class="text-xs sm:text-sm text-primary hover:underline">Clear All</button>
                                 </div>
                                 <div id="notificationList" class="divide-y"></div>
-                                <div class="p-4 text-center text-sm text-gray-500" id="noNotifications">No notifications</div>
+                                <div class="p-3 sm:p-4 text-center text-xs sm:text-sm text-gray-500" id="noNotifications">No notifications</div>
                             </div>
                         </div>
-                        <button onclick="sendSosAlert()" class="px-4 py-2 bg-secondary text-white rounded-button font-semibold hover:bg-secondary/90">
-                            <i class="ri-alarm-warning-line mr-2"></i>Send SOS Alert
+                        <button onclick="sendSosAlert()" class="px-3 sm:px-4 py-2 bg-secondary text-white rounded-button font-semibold hover:bg-secondary/90 text-sm sm:text-base">
+                            <i class="ri-alarm-warning-line mr-1 sm:mr-2 text-sm sm:text-base"></i>Send SOS Alert
                         </button>
                     </div>
                 </div>
             </header>
 
-            <div class="p-6">
-                <div class="mb-8">
-                    <h1 id="patientName" class="text-2xl font-semibold mb-2">Loading...</h1>
-                    <p id="patientId" class="text-gray-600">ID: Loading...</p>
+            <div class="p-4 sm:p-6">
+                <div class="mb-6 sm:mb-8">
+                    <h1 id="patientName" class="text-xl sm:text-2xl font-semibold mb-2">Loading...</h1>
+                    <p id="patientId" class="text-gray-600 text-sm sm:text-base">ID: Loading...</p>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-card p-6 rounded-card shadow-sm">
-                        <h3 class="font-medium mb-4">Patient Overview</h3>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                    <div class="bg-card p-4 sm:p-6 rounded-card shadow-sm">
+                        <h3 class="font-medium mb-4 text-sm sm:text-base">Patient Overview</h3>
                         <div class="flex items-center mb-4">
-                            <span id="patientCondition" class="px-2 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">Unknown</span>
+                            <span id="patientCondition" class="px-2 py-1 text-xs sm:text-sm rounded-full bg-gray-100 text-gray-700">Unknown</span>
                         </div>
-                        <div class="flex justify-between text-sm mb-3">
+                        <div class="flex justify-between text-xs sm:text-sm mb-3">
                             <span>Age</span>
                             <span id="patientAge" class="font-medium">Unknown</span>
                         </div>
-                        <div class="flex justify-between text-sm mb-3">
+                        <div class="flex justify-between text-xs sm:text-sm mb-3">
                             <span>Room</span>
                             <span id="patientRoom" class="font-medium">Unknown</span>
                         </div>
-                        <div class="flex justify-between text-sm">
+                        <div class="flex justify-between text-xs sm:text-sm">
                             <span>Blood Pressure</span>
                             <span id="bloodPressure" class="font-medium">Unknown</span>
                         </div>
                     </div>
-                    <div class="bg-card p-6 rounded-card shadow-sm">
-                        <h3 class="font-medium mb-4">Medications</h3>
+                    <div class="bg-card p-4 sm:p-6 rounded-card shadow-sm">
+                        <h3 class="font-medium mb-4 text-sm sm:text-base">Medications</h3>
                         <div id="medicationsList" class="space-y-3">
-                            <p class="text-sm text-gray-500">No medications available</p>
+                            <p class="text-xs sm:text-sm text-gray-500">No medications available</p>
                         </div>
                     </div>
-                    <div class="bg-card p-6 rounded-card shadow-sm">
-                        <h3 class="font-medium mb-4">Appointments</h3>
+                    <div class="bg-card p-4 sm:p-6 rounded-card shadow-sm">
+                        <h3 class="font-medium mb-4 text-sm sm:text-base">Appointments</h3>
                         <div id="appointmentsList" class="space-y-3">
-                            <p class="text-sm text-gray-500">No appointments available</p>
+                            <p class="text-xs sm:text-sm text-gray-500">No appointments available</p>
                         </div>
                     </div>
-                    <div class="bg-card p-6 rounded-card shadow-sm">
-                        <h3 class="font-medium mb-4">Active SOS Alerts</h3>
+                    <div class="bg-card p-4 sm:p-6 rounded-card shadow-sm">
+                        <h3 class="font-medium mb-4 text-sm sm:text-base">Active SOS Alerts</h3>
                         <div id="sosAlertsList" class="space-y-3">
-                            <p class="text-sm text-gray-500">No active alerts</p>
+                            <p class="text-xs sm:text-sm text-gray-500">No active alerts</p>
                         </div>
                     </div>
                 </div>
@@ -261,16 +267,16 @@
                 notifications = notifications.slice(-50);
             }
             notificationList.innerHTML = notifications.map(notification => `
-                <div class="p-4 flex items-center justify-between hover:bg-gray-50">
-                    <div class="flex items-center space-x-3">
+                <div class="p-3 sm:p-4 flex items-center justify-between hover:bg-gray-50">
+                    <div class="flex items-center space-x-2 sm:space-x-3">
                         <i class="ri-${
                             notification.type === 'SOS Alert' ? 'alarm-warning-line' :
                             notification.type === 'Patient Condition' ? 'heart-pulse-line' :
                             'user-add-line'
-                        } text-primary"></i>
+                        } text-primary text-sm sm:text-base"></i>
                         <div>
-                            <p class="font-medium text-gray-700">${notification.type}</p>
-                            <p class="text-sm text-gray-500">${notification.message}</p>
+                            <p class="font-medium text-gray-700 text-sm sm:text-base">${notification.type}</p>
+                            <p class="text-xs sm:text-sm text-gray-500">${notification.message}</p>
                             <p class="text-xs text-gray-400">${notification.time}</p>
                         </div>
                     </div>
@@ -369,7 +375,7 @@
             document.getElementById('patientName').textContent = patient.name;
             document.getElementById('patientId').textContent = `ID: ${patient.patientId}`;
             document.getElementById('patientCondition').textContent = patient.condition;
-            document.getElementById('patientCondition').className = `px-2 py-1 text-sm rounded-full ${
+            document.getElementById('patientCondition').className = `px-2 py-1 text-xs sm:text-sm rounded-full ${
                 patient.condition === 'Stable' ? 'bg-green-100 text-green-700' :
                 patient.condition === 'Critical' ? 'bg-red-100 text-red-700' :
                 patient.condition === 'Recovering' ? 'bg-blue-100 text-blue-700' :
@@ -381,47 +387,47 @@
 
             const medicationsList = document.getElementById('medicationsList');
             medicationsList.innerHTML = medications.length > 0 ? medications.map(med => `
-                <div class="flex items-center p-3 bg-gray-50 rounded-lg">
-                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                        <i class="ri-capsule-line text-blue-500"></i>
+                <div class="flex items-center p-2 sm:p-3 bg-gray-50 rounded-lg">
+                    <div class="w-6 sm:w-8 h-6 sm:h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                        <i class="ri-capsule-line text-blue-500 text-sm sm:text-base"></i>
                     </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium">${med.name}</p>
+                    <div class="ml-2 sm:ml-3">
+                        <p class="text-xs sm:text-sm font-medium">${med.name}</p>
                     </div>
-                    <span class="ml-auto px-2 py-1 text-xs rounded-full ${
+                    <span class="ml-auto px-2 py-1 text-xs sm:text-sm rounded-full ${
                         med.taken ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                     }">${med.taken ? 'Taken' : 'Not Taken'}</span>
                 </div>
-            `).join('') : '<p class="text-sm text-gray-500">No medications available</p>';
+            `).join('') : '<p class="text-xs sm:text-sm text-gray-500">No medications available</p>';
 
             const appointmentsList = document.getElementById('appointmentsList');
             appointmentsList.innerHTML = appointments.length > 0 ? appointments.map(app => `
-                <div class="flex items-center p-3 bg-gray-50 rounded-lg">
-                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                        <i class="ri-calendar-line text-blue-500"></i>
+                <div class="flex items-center p-2 sm:p-3 bg-gray-50 rounded-lg">
+                    <div class="w-6 sm:w-8 h-6 sm:h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                        <i class="ri-calendar-line text-blue-500 text-sm sm:text-base"></i>
                     </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium">${app.reason}</p>
-                        <p class="text-xs text-gray-500">With ${app.doctorId ? app.doctorId.name : 'Unknown'} on ${new Date(app.date).toLocaleDateString()} at ${app.time}</p>
+                    <div class="ml-2 sm:ml-3">
+                        <p class="text-xs sm:text-sm font-medium">${app.reason}</p>
+                        <p class="text-xs text-gray-500">${app.doctorId ? app.doctorId.name : 'Unknown'} on ${new Date(app.date).toLocaleDateString()} at ${app.time}</p>
                     </div>
-                    <span class="ml-auto px-2 py-1 text-xs rounded-full ${
+                    <span class="ml-auto px-2 py-1 text-xs sm:text-sm rounded-full ${
                         app.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                     }">${app.status}</span>
                 </div>
-            `).join('') : '<p class="text-sm text-gray-500">No appointments available</p>';
+            `).join('') : '<p class="text-xs sm:text-sm text-gray-500">No appointments available</p>';
 
             const sosAlertsList = document.getElementById('sosAlertsList');
             sosAlertsList.innerHTML = sosAlerts.length > 0 ? sosAlerts.map(alert => `
-                <div class="flex items-center p-3 bg-red-50 rounded-lg">
-                    <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
-                        <i class="ri-error-warning-line text-red-500"></i>
+                <div class="flex items-center p-2 sm:p-3 bg-red-50 rounded-lg">
+                    <div class="w-6 sm:w-8 h-6 sm:h-8 rounded-full bg-red-100 flex items-center justify-center">
+                        <i class="ri-error-warning-line text-red-500 text-sm sm:text-base"></i>
                     </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium">SOS Alert</p>
+                    <div class="ml-2 sm:ml-3">
+                        <p class="text-xs sm:text-sm font-medium">SOS Alert</p>
                         <p class="text-xs text-gray-500">${new Date(alert.createdAt).toLocaleString()}</p>
                     </div>
                 </div>
-            `).join('') : '<p class="text-sm text-gray-500">No active alerts</p>';
+            `).join('') : '<p class="text-xs sm:text-sm text-gray-500">No active alerts</p>';
         }
 
         async function sendSosAlert() {
@@ -471,6 +477,28 @@
             await loadPatientData();
             updateNotifications();
             document.getElementById('logoutButton').addEventListener('click', handleLogout);
+
+            // Sidebar toggle
+            const openSidebarButton = document.getElementById('openSidebar');
+            const closeSidebarButton = document.getElementById('closeSidebar');
+            const sidebar = document.getElementById('sidebar');
+
+            openSidebarButton.addEventListener('click', () => {
+                sidebar.classList.remove('-translate-x-full');
+                document.body.classList.add('overflow-hidden');
+            });
+
+            closeSidebarButton.addEventListener('click', () => {
+                sidebar.classList.add('-translate-x-full');
+                document.body.classList.remove('overflow-hidden');
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!sidebar.contains(e.target) && !openSidebarButton.contains(e.target) && !sidebar.classList.contains('-translate-x-full')) {
+                    sidebar.classList.add('-translate-x-full');
+                    document.body.classList.remove('overflow-hidden');
+                }
+            });
         });
     </script>
 </body>

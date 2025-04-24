@@ -45,13 +45,11 @@ const ALZOGames = (function() {
    * });
    */
   function init(gameType, containerEl, options = {}, onComplete = null) {
-    // Clear container
     containerEl.innerHTML = '';
     
-    // Store callback
     resultsCallback = onComplete;
     
-    // Initialize the requested game
+
     switch (gameType.toLowerCase()) {
       case 'clock':
         activeGame = ClockDrawingGame.init(containerEl, {
@@ -147,16 +145,15 @@ const ALZOGames = (function() {
     return descriptions[gameType.toLowerCase()] || null;
   }
   
-  // Create the public API object with bound methods
+ 
   const api = {
     init: init,
     getAvailableGames: getAvailableGames,
     getGameDescription: getGameDescription
   };
   
-  // Return the API
+ 
   return api;
 })();
 
-// Export the module
 export default ALZOGames;

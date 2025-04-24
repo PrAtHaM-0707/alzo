@@ -41,32 +41,44 @@
           <a href="/#pricing" class="text-gray-700 hover:text-primary" aria-label="Pricing">Pricing</a>
           <a href="/login" class="bg-primary text-white px-6 py-2 rounded-button hover:bg-primary/90 cursor-pointer whitespace-nowrap" aria-label="Login">Login</a>
         </div>
+        <button id="mobileMenuButton" class="md:hidden text-gray-700 hover:text-primary focus:outline-none" aria-label="Toggle mobile menu">
+          <i id="mobileMenuIcon" class="ri-menu-line text-2xl"></i>
+        </button>
+      </div>
+      <div id="mobileMenu" class="hidden md:hidden bg-white border-t border-gray-100">
+        <div class="flex flex-col px-4 py-4 space-y-4">
+          <a href="/#features" class="text-gray-700 hover:text-primary" aria-label="Features">Features</a>
+          <a href="/#solutions" class="text-gray-700 hover:text-primary" aria-label="Solutions">Solutions</a>
+          <a href="/#testimonials" class="text-gray-700 hover:text-primary" aria-label="Testimonials">Testimonials</a>
+          <a href="/#pricing" class="text-gray-700 hover:text-primary" aria-label="Pricing">Pricing</a>
+          <a href="/login" class="bg-primary text-white px-6 py-2 rounded-button hover:bg-primary/90 text-center" aria-label="Login">Login</a>
+        </div>
       </div>
     </div>
   </nav>
   <section class="min-h-screen flex items-center bg-gradient-to-br from-white to-blue-50 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-      <div class="text-center md:text-left">
-        <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Welcome to ALZO</h1>
-        <p class="text-lg text-gray-600 mb-6">Join our community to empower Alzheimer's care through technology and support.</p>
+    <div class="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-8 items-center py-8">
+      <div class="text-center md:text-left px-4 sm:px-0">
+        <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4">Welcome to ALZO</h1>
+        <p class="text-base sm:text-lg text-gray-600 mb-6">Join our community to empower Alzheimer's care through technology and support.</p>
       </div>
       <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg w-full max-w-md mx-auto">
-        <h2 class="text-2xl font-semibold text-gray-900 mb-4 text-center">Create Your Account</h2>
+        <h2 class="text-xl sm:text-2xl font-semibold text-gray-900 mb-4 text-center">Create Your Account</h2>
         <form id="signupForm">
           <div class="mb-4">
             <label for="name" class="block text-gray-700 font-medium mb-2">Full Name</label>
-            <input type="text" id="name" name="name" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary" required />
+            <input type="text" id="name" name="name" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base" required />
           </div>
           <div class="mb-4">
             <label for="email" class="block text-gray-700 font-medium mb-2">Email Address</label>
-            <input type="email" id="email" name="email" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary" required />
+            <input type="email" id="email" name="email" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base" required />
           </div>
           <div class="mb-4">
             <label for="password" class="block text-gray-700 font-medium mb-2">Password</label>
-            <input type="password" id="password" name="password" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary" required />
+            <input type="password" id="password" name="password" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base" required />
           </div>
           <div id="errorMessage" class="text-red-500 text-center text-sm mb-4 hidden"></div>
-          <button type="submit" id="signupButton" class="w-full bg-primary text-white py-3 rounded-button font-semibold hover:bg-primary/90">Sign Up</button>
+          <button type="submit" id="signupButton" class="w-full bg-primary text-white py-3 rounded-button font-semibold hover:bg-primary/90 text-sm sm:text-base">Sign Up</button>
         </form>
         <p class="text-center text-gray-600 text-sm mt-4">
           Already have an account? <a href="/login" class="text-primary hover:underline">Login</a>
@@ -80,6 +92,16 @@
     </div>
   </footer>
   <script>
+    const mobileMenuButton = document.getElementById('mobileMenuButton');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const mobileMenuIcon = document.getElementById('mobileMenuIcon');
+
+    mobileMenuButton.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+      mobileMenuIcon.classList.toggle('ri-menu-line');
+      mobileMenuIcon.classList.toggle('ri-close-line');
+    });
+
     document.getElementById('signupForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const form = e.target;
@@ -94,7 +116,6 @@
         email: form.email.value.trim().toLowerCase(),
         password: form.password.value,
       };
-      // Client-side validation
       if (!formData.name) {
         errorMessage.textContent = 'Name is required';
         errorMessage.classList.remove('hidden');

@@ -51,18 +51,18 @@
     }
   </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen flex items-center justify-center p-4 sm:p-6">
   <div class="w-full max-w-md">
-    <div class="bg-white rounded-xl shadow-lg p-8">
-      <div class="text-center mb-8">
-        <h1 class="text-2xl font-bold text-gray-800 mb-2">Select Your Role</h1>
-        <p class="text-gray-500">Choose how you want to use ALZO today</p>
+    <div class="bg-white rounded-xl shadow-lg p-6 sm:p-8">
+      <div class="text-center mb-6 sm:mb-8">
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-800 mb-2">Select Your Role</h1>
+        <p class="text-sm sm:text-base text-gray-500">Choose how you want to use ALZO today</p>
       </div>
       <div class="space-y-4" id="role-buttons"></div>
       <div class="error-message text-center text-red-500 text-sm font-medium rounded-lg p-3 bg-red-50" id="error-message"></div>
     </div>
-    <div class="mt-6 text-center">
-      <a href="mailto:support@alzo.com" class="text-sm text-gray-500 hover:text-primary">Need help? Contact support</a>
+    <div class="mt-4 sm:mt-6 text-center">
+      <a href="mailto:support@alzo.com" class="text-sm sm:text-base text-gray-500 hover:text-primary">Need help? Contact support</a>
     </div>
   </div>
   <script>
@@ -70,7 +70,7 @@
       const token = localStorage.getItem('token');
       if (!token) {
         console.log('No token found, redirecting to /login');
-        window.location.href = '/login';
+        window.location.href = '/login.html';
         return;
       }
 
@@ -104,15 +104,15 @@
             const button = document.createElement('button');
             button.className = 'role-btn w-full flex items-center p-4 bg-white border border-gray-200 rounded-button text-left transition-all duration-300 hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30';
             button.innerHTML = `
-              <div class="w-12 h-12 flex items-center justify-center bg-primary/10 rounded-full mr-4">
-                <i class="${icon} text-xl text-primary"></i>
+              <div class="w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center bg-primary/10 rounded-full mr-3 sm:mr-4">
+                <i class="${icon} text-lg sm:text-xl text-primary"></i>
               </div>
               <div>
-                <span class="font-medium text-gray-800">${title}</span>
-                <div class="text-sm text-gray-500">${description}</div>
+                <span class="font-medium text-gray-800 text-sm sm:text-base">${title}</span>
+                <div class="text-xs sm:text-sm text-gray-500">${description}</div>
               </div>
               <div class="ml-auto">
-                <i class="ri-arrow-right-line text-gray-400"></i>
+                <i class="ri-arrow-right-line text-gray-400 text-base sm:text-lg"></i>
               </div>
             `;
             button.addEventListener('click', async () => {
@@ -168,7 +168,7 @@
         } catch (error) {
           console.error('Error fetching user data:', error.message);
           localStorage.removeItem('token');
-          window.location.href = '/login';
+          window.location.href = '/login.html';
         }
       }
 

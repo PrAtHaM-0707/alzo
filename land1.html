@@ -44,103 +44,103 @@
   </style>
 </head>
 <body class="font-sans bg-white">
-  <!-- Header -->
   <nav class="fixed top-0 w-full bg-white/95 backdrop-blur-sm z-50 border-b border-gray-100">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between h-16 items-center">
-        <!-- ALZO Logo -->
         <a href="/" class="text-2xl font-display text-primary" aria-label="ALZO Home">ALZO</a>
-        <!-- Navigation links -->
-        <div class="hidden md:flex items-center space-x-8">
+       <div class="hidden md:flex items-center space-x-8">
           <a href="#features" class="text-gray-700 hover:text-primary" aria-label="Features">Features</a>
           <a href="#solutions" class="text-gray-700 hover:text-primary" aria-label="Solutions">Solutions</a>
           <a href="#testimonials" class="text-gray-700 hover:text-primary" aria-label="Testimonials">Testimonials</a>
           <a href="#pricing" class="text-gray-700 hover:text-primary" aria-label="Pricing">Pricing</a>
           <a href="/signup" class="bg-primary text-white px-6 py-2 rounded-button hover:bg-primary/90 cursor-pointer whitespace-nowrap" aria-label="Get Started">Get Started</a>
         </div>
+        <button id="mobileMenuButton" class="md:hidden text-gray-700 hover:text-primary focus:outline-none" aria-label="Toggle mobile menu">
+          <i id="mobileMenuIcon" class="ri-menu-line text-2xl"></i>
+        </button>
+      </div>
+      <div id="mobileMenu" class="hidden md:hidden bg-white border-t border-gray-100">
+        <div class="flex flex-col px-4 py-4 space-y-4">
+          <a href="#features" class="text-gray-700 hover:text-primary" aria-label="Features">Features</a>
+          <a href="#solutions" class="text-gray-700 hover:text-primary" aria-label="Solutions">Solutions</a>
+          <a href="#testimonials" class="text-gray-700 hover:text-primary" aria-label="Testimonials">Testimonials</a>
+          <a href="#pricing" class="text-gray-700 hover:text-primary" aria-label="Pricing">Pricing</a>
+          <a href="/signup" class="bg-primary text-white px-6 py-2 rounded-button hover:bg-primary/90 text-center" aria-label="Get Started">Get Started</a>
+        </div>
       </div>
     </div>
   </nav>
 
-  <!-- Hero Section -->
-  <section class="pt-32 pb-20 relative overflow-hidden bg-gradient-to-br from-white to-blue-50">
-    <!-- Background illustration with opacity -->
-    <div class="absolute inset-0 bg-[url('https://public.readdy.ai/ai/img_res/b43cc7cfab83ca55361ad98b47bf020b.jpg')] bg-cover bg-center opacity-10"></div>
+  <section class="pt-20 sm:pt-24 md:pt-32 pb-12 sm:pb-16 md:pb-20 relative overflow-hidden bg-gradient-to-br from-white to-blue-50">
+   <div class="absolute inset-0 bg-[url('https://public.readdy.ai/ai/img_res/b43cc7cfab83ca55361ad98b47bf020b.jpg')] bg-cover bg-center opacity-10"></div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-      <div class="grid lg:grid-cols-2 gap-12 items-center">
-        <!-- Text content: Headline, Subheadline, and CTA Buttons -->
-        <div>
-          <h1 class="text-5xl font-bold text-gray-900 leading-tight mb-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 items-center">
+       <div class="text-center lg:text-left">
+          <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 leading-tight mb-4 sm:mb-6">
             Empowering Alzheimer's Care with Technology
           </h1>
-          <p class="text-xl text-gray-600 mb-8">
+          <p class="text-base sm:text-lg md:text-xl text-gray-600 mb-6 sm:mb-8">
             ALZO helps patients, caregivers, and doctors stay connected and manage care effectively.
           </p>
-          <!-- CTA Buttons -->
-          <div class="flex gap-4 justify-end">
-            <a href="/signup" class="bg-primary text-white px-8 py-4 rounded-button text-lg font-semibold hover:bg-primary/90 cursor-pointer whitespace-nowrap" aria-label="Sign Up Now">
+         <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+            <a href="/signup" class="bg-primary text-white px-6 sm:px-8 py-3 sm:py-4 rounded-button text-base sm:text-lg font-semibold hover:bg-primary/90 cursor-pointer whitespace-nowrap" aria-label="Sign Up Now">
               Sign Up Now
             </a>
-            <a href="/login" class="border border-gray-300 text-gray-700 px-8 py-4 rounded-button text-lg font-semibold hover:bg-gray-50 cursor-pointer whitespace-nowrap" aria-label="Login">
+            <a href="/login" class="border border-gray-300 text-gray-700 px-6 sm:px-8 py-3 sm:py-4 rounded-button text-base sm:text-lg font-semibold hover:bg-gray-50 cursor-pointer whitespace-nowrap" aria-label="Login">
               Login
             </a>
           </div>
         </div>
-        <!-- Image/Illustration -->
-        <div class="relative">
-          <img src="land.png" alt="ALZO Platform Interface" class="rounded-2xl shadow-2xl" />
+        <div class="relative mt-8 lg:mt-0">
+          <img src="land.png" alt="ALZO Platform Interface" class="rounded-2xl shadow-xl w-full" />
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Features Section -->
-  <section class="py-20 bg-white" id="features">
+ <section class="py-12 sm:py-16 md:py-20 bg-white" id="features">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center mb-16">
-        <h2 class="text-3xl font-bold text-gray-900 mb-4">Why Choose ALZO?</h2>
-        <p class="text-xl text-gray-600">Comprehensive care management solution designed for everyone involved</p>
+      <div class="text-center mb-10 sm:mb-16">
+        <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Why Choose ALZO?</h2>
+        <p class="text-base sm:text-lg md:text-xl text-gray-600">Comprehensive care management solution designed for everyone involved</p>
       </div>
-      <div class="grid md:grid-cols-3 gap-8">
-        <!-- Feature Cards -->
-        <div class="p-8 rounded-xl bg-blue-50 hover:bg-blue-100 transition-all">
-          <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-            <i class="ri-heart-pulse-line text-primary text-2xl"></i>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+        <div class="p-6 sm:p-8 rounded-xl bg-blue-50 hover:bg-blue-100 transition-all">
+          <div class="w-12 sm:w-16 h-12 sm:h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 sm:mb-6">
+            <i class="ri-heart-pulse-line text-primary text-xl sm:text-2xl"></i>
           </div>
-          <h3 class="text-xl font-semibold text-gray-900 mb-4">Care Management</h3>
-          <p class="text-gray-600">Streamline daily care routines, medication schedules, and appointments in one intuitive platform.</p>
+          <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Care Management</h3>
+          <p class="text-gray-600 text-sm sm:text-base">Streamline daily care routines, medication schedules, and appointments in one intuitive platform.</p>
         </div>
-        <div class="p-8 rounded-xl bg-blue-50 hover:bg-blue-100 transition-all">
-          <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-            <i class="ri-team-line text-primary text-2xl"></i>
+        <div class="p-6 sm:p-8 rounded-xl bg-blue-50 hover:bg-blue-100 transition-all">
+          <div class="w-12 sm:w-16 h-12 sm:h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 sm:mb-6">
+            <i class="ri-team-line text-primary text-xl sm:text-2xl"></i>
           </div>
-          <h3 class="text-xl font-semibold text-gray-900 mb-4">Connected Community</h3>
-          <p class="text-gray-600">Connect with other caregivers, share experiences, and access professional support when needed.</p>
+          <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Connected Community</h3>
+          <p class="text-gray-600 text-sm sm:text-base">Connect with other caregivers, share experiences, and access professional support when needed.</p>
         </div>
-        <div class="p-8 rounded-xl bg-blue-50 hover:bg-blue-100 transition-all">
-          <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-            <i class="ri-shield-check-line text-primary text-2xl"></i>
+        <div class="p-6 sm:p-8 rounded-xl bg-blue-50 hover:bg-blue-100 transition-all">
+          <div class="w-12 sm:w-16 h-12 sm:h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 sm:mb-6">
+            <i class="ri-shield-check-line text-primary text-xl sm:text-2xl"></i>
           </div>
-          <h3 class="text-xl font-semibold text-gray-900 mb-4">Professional Support</h3>
-          <p class="text-gray-600">Access to healthcare professionals, resources, and emergency assistance 24/7.</p>
+          <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Professional Support</h3>
+          <p class="text-gray-600 text-sm sm:text-base">Access to healthcare professionals, resources, and emergency assistance 24/7.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Solutions Section -->
-  <section class="py-20 bg-gray-50" id="solutions">
+  <section class="py-12 sm:py-16 md:py-20 bg-gray-50" id="solutions">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center mb-16">
-        <h2 class="text-3xl font-bold text-gray-900 mb-4">Solutions for Everyone</h2>
-        <p class="text-xl text-gray-600">Tailored features for patients, caregivers, and healthcare professionals</p>
+      <div class="text-center mb-10 sm:mb-16">
+        <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Solutions for Everyone</h2>
+        <p class="text-base sm:text-lg md:text-xl text-gray-600">Tailored features for patients, caregivers, and healthcare professionals</p>
       </div>
-      <div class="grid md:grid-cols-3 gap-8">
-        <!-- For Patients -->
-        <div class="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition-all">
-          <img src="https://public.readdy.ai/ai/img_res/1c612a48760d2f186f2baa41fdb3205f.jpg" alt="Patient Interface" class="w-full h-48 object-cover rounded-lg mb-6" />
-          <h3 class="text-xl font-semibold text-gray-900 mb-4">For Patients</h3>
-          <ul class="space-y-3 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+       <div class="bg-white p-6 sm:p-8 rounded-xl shadow-sm hover:shadow-md transition-all">
+          <img src="https://public.readdy.ai/ai/img_res/1c612a48760d2f186f2baa41fdb3205f.jpg" alt="Patient Interface" class="w-full h-40 sm:h-48 object-cover rounded-lg mb-4 sm:mb-6" />
+          <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-4">For Patients</h3>
+          <ul class="space-y-3 mb-4 sm:mb-6 text-sm sm:text-base">
             <li class="flex items-center gap-2">
               <i class="ri-check-line text-primary"></i>
               <span class="text-gray-600">Simple, accessible interface</span>
@@ -154,15 +154,14 @@
               <span class="text-gray-600">Activity tracking</span>
             </li>
           </ul>
-          <button class="w-full bg-primary text-white py-3 rounded-button hover:bg-primary/90 cursor-pointer whitespace-nowrap" aria-label="Learn More for Patients">
+          <button class="w-full bg-primary text-white py-2 sm:py-3 rounded-button hover:bg-primary/90 cursor-pointer whitespace-nowrap text-sm sm:text-base" aria-label="Learn More for Patients">
             Learn More
           </button>
         </div>
-        <!-- For Caregivers -->
-        <div class="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition-all">
-          <img src="doc.png" alt="Caregiver Interface" class="w-full h-48 object-cover rounded-lg mb-6" />
-          <h3 class="text-xl font-semibold text-gray-900 mb-4">For Caregivers</h3>
-          <ul class="space-y-3 mb-6">
+        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-sm hover:shadow-md transition-all">
+          <img src="doc.png" alt="Caregiver Interface" class="w-full h-40 sm:h-48 object-cover rounded-lg mb-4 sm:mb-6" />
+          <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-4">For Caregivers</h3>
+          <ul class="space-y-3 mb-4 sm:mb-6 text-sm sm:text-base">
             <li class="flex items-center gap-2">
               <i class="ri-check-line text-primary"></i>
               <span class="text-gray-600">Care schedule management</span>
@@ -176,15 +175,14 @@
               <span class="text-gray-600">Community support</span>
             </li>
           </ul>
-          <button class="w-full bg-primary text-white py-3 rounded-button hover:bg-primary/90 cursor-pointer whitespace-nowrap" aria-label="Learn More for Caregivers">
+          <button class="w-full bg-primary text-white py-2 sm:py-3 rounded-button hover:bg-primary/90 cursor-pointer whitespace-nowrap text-sm sm:text-base" aria-label="Learn More for Caregivers">
             Learn More
           </button>
         </div>
-        <!-- For Professionals -->
-        <div class="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition-all">
-          <img src="https://public.readdy.ai/ai/img_res/1afdf4ac76f0715a7616096229715a14.jpg" alt="Professional Interface" class="w-full h-48 object-cover rounded-lg mb-6" />
-          <h3 class="text-xl font-semibold text-gray-900 mb-4">For Professionals</h3>
-          <ul class="space-y-3 mb-6">
+        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-sm hover:shadow-md transition-all">
+          <img src="https://public.readdy.ai/ai/img_res/1afdf4ac76f0715a7616096229715a14.jpg" alt="Professional Interface" class="w-full h-40 sm:h-48 object-cover rounded-lg mb-4 sm:mb-6" />
+          <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-4">For Professionals</h3>
+          <ul class="space-y-3 mb-4 sm:mb-6 text-sm sm:text-base">
             <li class="flex items-center gap-2">
               <i class="ri-check-line text-primary"></i>
               <span class="text-gray-600">Patient monitoring</span>
@@ -198,7 +196,7 @@
               <span class="text-gray-600">Care coordination</span>
             </li>
           </ul>
-          <button class="w-full bg-primary text-white py-3 rounded-button hover:bg-primary/90 cursor-pointer whitespace-nowrap" aria-label="Learn More for Professionals">
+          <button class="w-full bg-primary text-white py-2 sm:py-3 rounded-button hover:bg-primary/90 cursor-pointer whitespace-nowrap text-sm sm:text-base" aria-label="Learn More for Professionals">
             Learn More
           </button>
         </div>
@@ -206,106 +204,101 @@
     </div>
   </section>
 
-  <!-- Testimonials Section -->
-  <section class="py-20 bg-white" id="testimonials">
+  <section class="py-12 sm:py-16 md:py-20 bg-white" id="testimonials">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center mb-16">
-        <h2 class="text-3xl font-bold text-gray-900 mb-4">What Our Users Say</h2>
-        <p class="text-xl text-gray-600">Real stories from people who use ALZO every day</p>
+      <div class="text-center mb-10 sm:mb-16">
+        <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">What Our Users Say</h2>
+        <p class="text-base sm:text-lg md:text-xl text-gray-600">Real stories from people who use ALZO every day</p>
       </div>
       <div class="relative">
         <div id="testimonialSlider" class="relative">
           <div class="testimonial-slide active">
-            <div class="bg-blue-50 p-8 rounded-xl">
-              <p class="text-lg text-gray-600 mb-6">"ALZO has transformed how we manage my mother's care. The medication reminders and activity tracking have given us peace of mind and helped maintain her independence longer."</p>
+            <div class="bg-blue-50 p-6 sm:p-8 rounded-xl">
+              <p class="text-base sm:text-lg text-gray-600 mb-4 sm:mb-6">"ALZO has transformed how we manage my mother's care. The medication reminders and activity tracking have given us peace of mind and helped maintain her independence longer."</p>
               <div class="flex items-center gap-4">
-                <img src="https://public.readdy.ai/ai/img_res/a3e2a65257268af5ab8689b5c22265f5.jpg" alt="Sarah Mitchell" class="w-12 h-12 rounded-full" />
+                <img src="https://public.readdy.ai/ai/img_res/a3e2a65257268af5ab8689b5c22265f5.jpg" alt="Sarah Mitchell" class="w-10 sm:w-12 h-10 sm:h-12 rounded-full" />
                 <div>
-                  <h4 class="font-semibold text-gray-900">Sarah Mitchell</h4>
-                  <p class="text-gray-600">Family Caregiver</p>
+                  <h4 class="font-semibold text-gray-900 text-sm sm:text-base">Sarah Mitchell</h4>
+                  <p class="text-gray-600 text-xs sm:text-sm">Family Caregiver</p>
                 </div>
               </div>
             </div>
           </div>
           <div class="testimonial-slide">
-            <div class="bg-blue-50 p-8 rounded-xl">
-              <p class="text-lg text-gray-600 mb-6">"As a healthcare professional, ALZO has streamlined our patient care coordination. The data insights help us make better decisions and provide more personalized care."</p>
+            <div class="bg-blue-50 p-6 sm:p-8 rounded-xl">
+              <p class="text-base sm:text-lg text-gray-600 mb-4 sm:mb-6">"As a healthcare professional, ALZO has streamlined our patient care coordination. The data insights help us make better decisions and provide more personalized care."</p>
               <div class="flex items-center gap-4">
-                <img src="https://public.readdy.ai/ai/img_res/67389375cbf8c22b2a6b0ffa399c4036.jpg" alt="Dr. James Wilson" class="w-12 h-12 rounded-full" />
+                <img src="https://public.readdy.ai/ai/img_res/67389375cbf8c22b2a6b0ffa399c4036.jpg" alt="Dr. James Wilson" class="w-10 sm:w-12 h-10 sm:h-12 rounded-full" />
                 <div>
-                  <h4 class="font-semibold text-gray-900">Dr. James Wilson</h4>
-                  <p class="text-gray-600">Neurologist</p>
+                  <h4 class="font-semibold text-gray-900 text-sm sm:text-base">Dr. James Wilson</h4>
+                  <p class="text-gray-600 text-xs sm:text-sm">Neurologist</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <!-- Testimonial slider navigation -->
-        <div class="flex justify-center mt-8 gap-2">
+       <div class="flex justify-center mt-6 sm:mt-8 gap-2">
           <button onclick="showSlide(0)" class="w-3 h-3 rounded-full bg-primary cursor-pointer" aria-label="Slide 1"></button>
           <button onclick="showSlide(1)" class="w-3 h-3 rounded-full bg-gray-300 cursor-pointer" aria-label="Slide 2"></button>
         </div>
       </div>
     </div>
   </section>
-
-  <!-- Final CTA Section -->
-  <section class="py-20 bg-gradient-to-br from-primary/5 to-secondary/5">
+<section class="py-12 sm:py-16 md:py-20 bg-gradient-to-br from-primary/5 to-secondary/5">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center mb-16">
-        <h2 class="text-3xl font-bold text-gray-900 mb-4">Ready to Get Started?</h2>
-        <p class="text-xl text-gray-600 mb-8">Join thousands of users who trust ALZO for their care management needs</p>
-        <a href="/signup" class="bg-primary text-white px-8 py-4 rounded-button text-lg font-semibold hover:bg-primary/90 cursor-pointer whitespace-nowrap" aria-label="Start Your Free Trial">
+      <div class="text-center mb-10 sm:mb-16">
+        <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Ready to Get Started?</h2>
+        <p class="text-base sm:text-lg md:text-xl text-gray-600 mb-6 sm:mb-8">Join thousands of users who trust ALZO for their care management needs</p>
+        <a href="/signup" class="bg-primary text-white px-6 sm:px-8 py-3 sm:py-4 rounded-button text-base sm:text-lg font-semibold hover:bg-primary/90 cursor-pointer whitespace-nowrap" aria-label="Start Your Free Trial">
           Start Your Free Trial
         </a>
       </div>
     </div>
   </section>
 
-  <!-- Footer -->
-  <footer class="bg-gray-900 text-white py-12">
+  <footer class="bg-gray-900 text-white py-8 sm:py-12">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="grid md:grid-cols-4 gap-8">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
         <div>
-          <h3 class="text-2xl font-display text-primary mb-4">ALZO</h3>
-          <p class="text-gray-400">Empowering Alzheimer's care through technology and community support.</p>
+          <h3 class="text-xl sm:text-2xl font-display text-primary mb-4">ALZO</h3>
+          <p class="text-gray-400 text-sm sm:text-base">Empowering Alzheimer's care through technology and community support.</p>
         </div>
         <div>
-          <h4 class="font-semibold mb-4">Product</h4>
-          <ul class="space-y-2">
+          <h4 class="font-semibold mb-4 text-sm sm:text-base">Product</h4>
+          <ul class="space-y-2 text-sm sm:text-base">
             <li><a href="#features" class="text-gray-400 hover:text-white">Features</a></li>
             <li><a href="#solutions" class="text-gray-400 hover:text-white">Solutions</a></li>
             <li><a href="#pricing" class="text-gray-400 hover:text-white">Pricing</a></li>
           </ul>
         </div>
         <div>
-          <h4 class="font-semibold mb-4">Resources</h4>
-          <ul class="space-y-2">
+          <h4 class="font-semibold mb-4 text-sm sm:text-base">Resources</h4>
+          <ul class="space-y-2 text-sm sm:text-base">
             <li><a href="#" class="text-gray-400 hover:text-white">Help Center</a></li>
             <li><a href="#" class="text-gray-400 hover:text-white">Community</a></li>
             <li><a href="#" class="text-gray-400 hover:text-white">Blog</a></li>
           </ul>
         </div>
         <div>
-          <h4 class="font-semibold mb-4">Contact</h4>
-          <ul class="space-y-2">
+          <h4 class="font-semibold mb-4 text-sm sm:text-base">Contact</h4>
+          <ul class="space-y-2 text-sm sm:text-base">
             <li class="text-gray-400">support@alzo.com</li>
             <li class="text-gray-400">1-800-ALZO-CARE</li>
           </ul>
         </div>
       </div>
-      <div class="border-t border-gray-800 mt-12 pt-8">
-        <div class="flex justify-between items-center">
-          <p class="text-gray-400">© 2025 ALZO. All rights reserved.</p>
+      <div class="border-t border-gray-800 mt-8 sm:mt-12 pt-6 sm:pt-8">
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <p class="text-gray-400 text-sm sm:text-base">© 2025 ALZO. All rights reserved.</p>
           <div class="flex gap-4">
             <a href="#" class="text-gray-400 hover:text-white" aria-label="Facebook">
-              <i class="ri-facebook-fill"></i>
+              <i class="ri-facebook-fill text-base sm:text-lg"></i>
             </a>
             <a href="#" class="text-gray-400 hover:text-white" aria-label="Twitter">
-              <i class="ri-twitter-fill"></i>
+              <i class="ri-twitter-fill text-base sm:text-lg"></i>
             </a>
             <a href="#" class="text-gray-400 hover:text-white" aria-label="LinkedIn">
-              <i class="ri-linkedin-fill"></i>
+              <i class="ri-linkedin-fill text-base sm:text-lg"></i>
             </a>
           </div>
         </div>
@@ -314,7 +307,16 @@
   </footer>
 
   <script>
-    // Testimonial slider functionality
+    const mobileMenuButton = document.getElementById('mobileMenuButton');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const mobileMenuIcon = document.getElementById('mobileMenuIcon');
+
+    mobileMenuButton.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+      mobileMenuIcon.classList.toggle('ri-menu-line');
+      mobileMenuIcon.classList.toggle('ri-close-line');
+    });
+
     function showSlide(index) {
       const slides = document.querySelectorAll('.testimonial-slide');
       const buttons = document.querySelectorAll('.flex.justify-center button');
