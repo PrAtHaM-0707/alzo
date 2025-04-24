@@ -9,15 +9,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://js.pusher.com/8.2/pusher.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
                         primary: '#2D5BFF',
-                        secondary: '#FF3B3B',
-                        card: '#F9FAFB'
+                        secondary: '#FF3B3B'
                     },
                     borderRadius: {
                         'none': '0px',
@@ -29,8 +27,7 @@
                         '2xl': '24px',
                         '3xl': '32px',
                         'full': '9999px',
-                        'button': '8px',
-                        'card': '12px'
+                        'button': '8px'
                     }
                 }
             }
@@ -44,27 +41,6 @@
         .blur-bg {
             filter: blur(4px);
             pointer-events: none;
-        }
-        #notificationDropdown::-webkit-scrollbar {
-            width: 6px;
-        }
-        #notificationDropdown::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
-        }
-        #notificationDropdown::-webkit-scrollbar-thumb {
-            background: #2D5BFF;
-            border-radius: 3px;
-        }
-        #notificationDropdown::-webkit-scrollbar-thumb:hover {
-            background: #1e4cd9;
-        }
-        .animate-slide-down {
-            animation: slideDown 0.3s ease-out;
-        }
-        @keyframes slideDown {
-            from { transform: translateY(-10%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
         }
     </style>
 </head>
@@ -130,20 +106,6 @@
                         <h1 class="text-xl font-semibold">Caregiver Dashboard</h1>
                     </div>
                     <div class="flex items-center space-x-4">
-                        <div class="relative">
-                            <button id="notificationButton" class="flex items-center space-x-2 px-3 py-2 bg-primary text-white rounded-button hover:bg-primary/90 relative">
-                                <i class="ri-notification-3-line"></i>
-                                <span id="notificationCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
-                            </button>
-                            <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-80 bg-card rounded-card shadow-lg z-10 max-h-96 overflow-y-auto">
-                                <div class="p-4 border-b flex justify-between items-center">
-                                    <h3 class="font-semibold text-gray-700">Notifications</h3>
-                                    <button id="clearNotificationsButton" class="text-sm text-primary hover:underline">Clear All</button>
-                                </div>
-                                <div id="notificationList" class="divide-y"></div>
-                                <div class="p-4 text-center text-sm text-gray-500" id="noNotifications">No notifications</div>
-                            </div>
-                        </div>
                         <button onclick="openAddPatientModal()" class="px-4 py-2 bg-primary text-white rounded-button font-semibold hover:bg-primary/90">
                             <i class="ri-user-add-line mr-2"></i>Add Patient
                         </button>
@@ -158,35 +120,35 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-white p-6 rounded-card shadow-sm">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
                         <h3 class="font-medium mb-2">Total Patients</h3>
                         <p id="totalPatients" class="text-2xl font-semibold text-primary">0</p>
                     </div>
-                    <div class="bg-white p-6 rounded-card shadow-sm">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
                         <h3 class="font-medium mb-2">Stable Patients</h3>
                         <p id="stablePatients" class="text-2xl font-semibold text-green-500">0</p>
                     </div>
-                    <div class="bg-white p-6 rounded-card shadow-sm">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
                         <h3 class="font-medium mb-2">Critical Patients</h3>
                         <p id="criticalPatients" class="text-2xl font-semibold text-red-500">0</p>
                     </div>
-                    <div class="bg-white p-6 rounded-card shadow-sm">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
                         <h3 class="font-medium mb-2">Active SOS Alerts</h3>
                         <p id="sosAlerts" class="text-2xl font-semibold text-orange-500">0</p>
                     </div>
-                    <div class="bg-white p-6 rounded-card shadow-sm">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
                         <h3 class="font-medium mb-2">Recovering Patients</h3>
                         <p id="recoveringPatients" class="text-2xl font-semibold text-blue-500">0</p>
                     </div>
-                    <div class="bg-white p-6 rounded-card shadow-sm">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
                         <h3 class="font-medium mb-2">Under Observation</h3>
                         <p id="underObservationPatients" class="text-2xl font-semibold text-yellow-500">0</p>
                     </div>
-                    <div class="bg-white p-6 rounded-card shadow-sm">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
                         <h3 class="font-medium mb-2">Recent Activity</h3>
                         <p id="recentActivity" class="text-sm text-gray-600">No recent activity</p>
                     </div>
-                    <div class="bg-white p-6 rounded-card shadow-sm">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
                         <h3 class="font-medium mb-2">Pending Tasks</h3>
                         <p id="pendingTasks" class="text-sm text-gray-600">No pending tasks</p>
                     </div>
@@ -204,128 +166,6 @@
 
     <script>
         let caregiverData = null;
-        let currentUserEmail = null;
-
-        // Notification System
-        let notifications = [];
-        const notificationButton = document.getElementById('notificationButton');
-        const notificationDropdown = document.getElementById('notificationDropdown');
-        const notificationList = document.getElementById('notificationList');
-        const notificationCount = document.getElementById('notificationCount');
-        const noNotifications = document.getElementById('noNotifications');
-
-        function loadNotificationsFromStorage(userEmail) {
-            const storedNotifications = localStorage.getItem(`notifications_${userEmail}`);
-            if (storedNotifications) {
-                notifications = JSON.parse(storedNotifications);
-                const now = new Date();
-                notifications = notifications.filter(n => {
-                    const notificationTime = new Date(n.time);
-                    return (now - notificationTime) / (1000 * 60 * 60 * 24) <= 7;
-                });
-                saveNotificationsToStorage(userEmail);
-                updateNotifications();
-            }
-        }
-
-        function saveNotificationsToStorage(userEmail) {
-            localStorage.setItem(`notifications_${userEmail}`, JSON.stringify(notifications));
-        }
-
-        function clearNotifications(userEmail) {
-            notifications = [];
-            localStorage.removeItem(`notifications_${userEmail}`);
-            updateNotifications();
-        }
-
-        const pusher = new Pusher('84b6c0b1f09f713d3ba7', {
-            cluster: 'ap2'
-        });
-        const channel = pusher.subscribe('notifications');
-
-        channel.bind('new-sos-alert', function(data) {
-            notifications.push({
-                id: data.id,
-                type: 'SOS Alert',
-                message: `New SOS Alert from ${data.patientName}`,
-                time: new Date(data.time).toLocaleString()
-            });
-            updateNotifications();
-            saveNotificationsToStorage(currentUserEmail);
-            loadDashboardData();
-            loadPatients();
-        });
-
-        channel.bind('patient-condition-update', function(data) {
-            notifications.push({
-                id: data.id,
-                type: 'Patient Condition',
-                message: `Patient ${data.patientName}'s condition changed to ${data.condition}`,
-                time: new Date(data.time).toLocaleString()
-            });
-            updateNotifications();
-            saveNotificationsToStorage(currentUserEmail);
-            loadDashboardData();
-            loadPatients();
-        });
-
-        channel.bind('new-patient-added', function(data) {
-            notifications.push({
-                id: data.id,
-                type: 'New Patient',
-                message: `New patient ${data.patientName} added to your care`,
-                time: new Date(data.time).toLocaleString()
-            });
-            updateNotifications();
-            saveNotificationsToStorage(currentUserEmail);
-            loadDashboardData();
-            loadPatients();
-        });
-
-        function updateNotifications() {
-            if (notifications.length > 50) {
-                notifications = notifications.slice(-50);
-            }
-            notificationList.innerHTML = notifications.map(notification => `
-                <div class="p-4 flex items-center justify-between hover:bg-gray-50">
-                    <div class="flex items-center space-x-3">
-                        <i class="ri-${
-                            notification.type === 'SOS Alert' ? 'alarm-warning-line' :
-                            notification.type === 'Patient Condition' ? 'heart-pulse-line' :
-                            'user-add-line'
-                        } text-primary"></i>
-                        <div>
-                            <p class="font-medium text-gray-700">${notification.type}</p>
-                            <p class="text-sm text-gray-500">${notification.message}</p>
-                            <p class="text-xs text-gray-400">${notification.time}</p>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-            noNotifications.classList.toggle('hidden', notifications.length > 0);
-            notificationCount.textContent = notifications.length;
-            notificationCount.classList.toggle('hidden', notifications.length === 0);
-        }
-
-        notificationButton.addEventListener('click', () => {
-            notificationDropdown.classList.toggle('hidden');
-            if (!notificationDropdown.classList.contains('hidden')) {
-                notificationDropdown.classList.add('animate-slide-down');
-                setTimeout(() => notificationDropdown.classList.remove('animate-slide-down'), 300);
-            }
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!notificationButton.contains(e.target) && !notificationDropdown.contains(e.target)) {
-                notificationDropdown.classList.add('hidden');
-            }
-        });
-
-        document.getElementById('clearNotificationsButton').addEventListener('click', () => {
-            if (currentUserEmail) {
-                clearNotifications(currentUserEmail);
-            }
-        });
 
         async function checkAuth() {
             const token = localStorage.getItem('token');
@@ -351,8 +191,6 @@
                     window.location.href = '/role';
                     return null;
                 }
-                currentUserEmail = data.email;
-                loadNotificationsFromStorage(data.email);
                 return data;
             } catch (err) {
                 console.error('Auth error:', err.message);
@@ -365,13 +203,11 @@
         function openAddPatientModal() {
             document.getElementById('patientIdModal').classList.remove('hidden');
             document.getElementById('dashboardContent').classList.add('blur-bg');
-            document.body.classList.add('overflow-hidden');
         }
 
         function closeAddPatientModal() {
             document.getElementById('patientIdModal').classList.add('hidden');
             document.getElementById('dashboardContent').classList.remove('blur-bg');
-            document.body.classList.remove('overflow-hidden');
             document.getElementById('patientIdForm').reset();
             document.getElementById('patientIdError').classList.add('hidden');
         }
@@ -456,7 +292,7 @@
 
                 const patientsList = document.getElementById('patientsList');
                 patientsList.innerHTML = patients.length > 0 ? patients.map(patient => `
-                    <a href="/caregiver/patient.html?patientId=${patient.patientId}" class="patient-card bg-card p-4 rounded-card shadow-sm cursor-pointer">
+                    <a href="/caregiver/patient.html?patientId=${patient.patientId}" class="patient-card bg-white p-4 rounded-lg shadow-sm cursor-pointer">
                         <div class="flex items-center">
                             <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
                                 <i class="ri-user-smile-line text-blue-500"></i>
@@ -482,9 +318,6 @@
 
         function handleLogout() {
             console.log('Logging out');
-            if (currentUserEmail) {
-                clearNotifications(currentUserEmail);
-            }
             localStorage.removeItem('token');
             window.location.href = '/login';
         }
@@ -498,7 +331,6 @@
             document.getElementById('welcomeMessage').textContent = `Welcome back, ${userData.name}!`;
             await loadDashboardData();
             await loadPatients();
-            updateNotifications();
 
             document.getElementById('patientIdForm').addEventListener('submit', handlePatientIdSubmit);
             document.getElementById('cancelPatientId').addEventListener('click', closeAddPatientModal);

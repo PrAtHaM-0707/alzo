@@ -5,15 +5,15 @@ const userSchema = new Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    role: { type: String, enum: ['patient', 'caregiver', 'doctor']},
-    patientId: { type: String, sparse: true }, 
+    role: { type: String, enum: ['patient', 'caregiver', 'doctor'] },
+    patientId: { type: String, sparse: true },
     specialty: { type: String },
     condition: { 
         type: String, 
         enum: ['Stable', 'Critical', 'Recovering', 'Under Observation'], 
         default: 'Stable' 
     }
-});
+}, { timestamps: true }); 
 
 userSchema.pre('save', async function (next) {
     if (this.isNew && this.role === 'patient' && !this.patientId) {

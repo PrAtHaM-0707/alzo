@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALZO Games Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="games.css" rel="stylesheet">
+</head>
+<body class="p-8">
+    <h1 class="text-2xl font-bold mb-4">ALZO Games Test</h1>
+    <div id="status" class="mb-4 p-4 bg-yellow-100 border border-yellow-300 rounded">
+        Loading games...
+    </div>
+    <div id="gameContainer" class="border p-4 rounded bg-gray-50 min-h-[400px]"></div>
+
+    <script type="module">
+        import ALZOGames from './index.js';
+        
+        const statusEl = document.getElementById('status');
+        const containerEl = document.getElementById('gameContainer');
+        
+        // Log the imported module
+        console.log('Imported ALZOGames module:', ALZOGames);
+        
+        // Check if methods exist
+        const methods = {
+            init: typeof ALZOGames.init === 'function',
+            getAvailableGames: typeof ALZOGames.getAvailableGames === 'function',
+            getGameDescription: typeof ALZOGames.getGameDescription === 'function'
+        };
+        
+        console.log('Methods available:', methods);
+        
+        try {
+            // Get available games
+            const games = ALZOGames.getAvailableGames();
+            console.log('Available games:', games);
+            
+            // Test if games can be initialized
+            statusEl.textContent = "Testing Clock Game...";
+            const clockGame = ALZOGames.init('clock', containerEl, {}, (result) => {
+                console.log("Clock game completed with result:", result);
+            });
+            
+            // If we get here without errors, games are working
+            statusEl.textContent = "Games loaded successfully! Clock game initialized.";
+            statusEl.className = "mb-4 p-4 bg-green-100 border border-green-300 rounded";
+            
+        } catch (error) {
+            // If there's an error, show it
+            statusEl.textContent = "Error loading games: " + error.message;
+            statusEl.className = "mb-4 p-4 bg-red-100 border border-red-300 rounded";
+            console.error(error);
+        }
+    </script>
+</body>
+</html>

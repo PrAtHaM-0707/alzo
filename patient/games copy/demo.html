@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALZO - Cognitive Games Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet"/>
+    <link href="games.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#57B5E7',
+                        secondary: '#8DD3C7',
+                        card: '#F9FAFB'
+                    },
+                    borderRadius: {
+                        button: '8px',
+                        card: '12px'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Pacifico', 'cursive']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .card { background-color: #F9FAFB; border-radius: 12px; padding: 16px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="text-2xl font-display text-primary">ALZO</div>
+                    <div class="ml-6 text-xl font-semibold">Cognitive Games Demo</div>
+                </div>
+                <a href="../pat.html" class="text-primary hover:underline flex items-center">
+                    <i class="ri-arrow-left-line mr-1"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="mb-8">
+            <h1 class="text-2xl font-semibold mb-2">Cognitive Assessment Games</h1>
+            <p class="text-gray-600">These interactive games help assess cognitive functions like memory, attention, and problem-solving skills.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="card game-card cursor-pointer" onclick="selectGame('clock')">
+                <div class="flex items-start">
+                    <div class="game-icon text-2xl">
+                        <i class="ri-time-line"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="font-semibold text-lg">Clock Drawing Test</h3>
+                        <p class="text-gray-600 text-sm mt-1">Set the clock hands to show the requested time.</p>
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Visuospatial</span>
+                            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Executive Function</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card game-card cursor-pointer" onclick="selectGame('trail')">
+                <div class="flex items-start">
+                    <div class="game-icon text-2xl">
+                        <i class="ri-route-line"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="font-semibold text-lg">Trail Making Test</h3>
+                        <p class="text-gray-600 text-sm mt-1">Connect numbered dots in sequential order.</p>
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Visual Attention</span>
+                            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Task Switching</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card game-card cursor-pointer" onclick="selectGame('nback')">
+                <div class="flex items-start">
+                    <div class="game-icon text-2xl">
+                        <i class="ri-brain-line"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="font-semibold text-lg">N-Back Memory Test</h3>
+                        <p class="text-gray-600 text-sm mt-1">Press the button when you see a shape that matches the previous one.</p>
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Working Memory</span>
+                            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Attention</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card game-card cursor-pointer" onclick="selectGame('maze')">
+                <div class="flex items-start">
+                    <div class="game-icon text-2xl">
+                        <i class="ri-compass-3-line"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="font-semibold text-lg">Maze Navigation Task</h3>
+                        <p class="text-gray-600 text-sm mt-1">Navigate through the maze to reach the exit using arrow keys.</p>
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Spatial Navigation</span>
+                            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Problem Solving</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="gameContainer" class="hidden">
+            <div class="flex items-center justify-between mb-4">
+                <h2 id="gameTitle" class="text-xl font-semibold"></h2>
+                <button onclick="closeGame()" class="text-gray-500 hover:text-gray-700">
+                    <i class="ri-close-line text-xl"></i>
+                </button>
+            </div>
+            <div id="gameContent" class="card alzo-game-container"></div>
+        </div>
+
+        <div id="resultsContainer" class="hidden mt-6">
+            <h3 class="text-lg font-semibold mb-2">Test Results</h3>
+            <div id="resultsContent" class="card"></div>
+        </div>
+    </main>
+
+    <script type="module">
+        import ALZOGames from './index.js';
+        
+        console.log('ALZO Games module loaded:', ALZOGames);
+        
+        window.currentGame = null;
+        
+        window.selectGame = function(gameType) {
+            // Update UI
+            document.getElementById('gameContainer').classList.remove('hidden');
+            document.getElementById('resultsContainer').classList.add('hidden');
+            
+            // Get game description
+            const gameDesc = ALZOGames.getGameDescription(gameType);
+            document.getElementById('gameTitle').textContent = gameDesc.title;
+            
+            // Clear previous game
+            const gameContent = document.getElementById('gameContent');
+            gameContent.innerHTML = '';
+            
+            // Initialize new game
+            window.currentGame = ALZOGames.init(gameType, gameContent, {}, handleGameComplete);
+            
+            // Scroll to game
+            document.getElementById('gameContainer').scrollIntoView({ behavior: 'smooth' });
+        };
+        
+        window.closeGame = function() {
+            document.getElementById('gameContainer').classList.add('hidden');
+            document.getElementById('resultsContainer').classList.add('hidden');
+        };
+        
+        function handleGameComplete(results) {
+            console.log('Game completed with results:', results);
+            
+            // Show results
+            const resultsContainer = document.getElementById('resultsContainer');
+            const resultsContent = document.getElementById('resultsContent');
+            
+            resultsContainer.classList.remove('hidden');
+            
+            // Format results based on game type
+            let resultsHTML = '';
+            
+            if (typeof results === 'number') {
+                // Clock game returns a score
+                resultsHTML = `
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-primary">${results}%</div>
+                        <p class="text-gray-600 mt-2">Accuracy Score</p>
+                    </div>
+                `;
+            } else if (results.time !== undefined && results.errors !== undefined) {
+                // Trail game returns time and errors
+                resultsHTML = `
+                    <div class="grid grid-cols-2 gap-4 text-center">
+                        <div>
+                            <div class="text-3xl font-bold text-primary">${results.time.toFixed(1)}s</div>
+                            <p class="text-gray-600 mt-2">Completion Time</p>
+                        </div>
+                        <div>
+                            <div class="text-3xl font-bold text-primary">${results.errors}</div>
+                            <p class="text-gray-600 mt-2">Errors</p>
+                        </div>
+                    </div>
+                `;
+            } else if (results.correct !== undefined) {
+                // N-back game returns correct/incorrect/missed
+                resultsHTML = `
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <div>
+                            <div class="text-3xl font-bold text-green-500">${results.correct}</div>
+                            <p class="text-gray-600 mt-2">Correct</p>
+                        </div>
+                        <div>
+                            <div class="text-3xl font-bold text-red-500">${results.incorrect}</div>
+                            <p class="text-gray-600 mt-2">Incorrect</p>
+                        </div>
+                        <div>
+                            <div class="text-3xl font-bold text-orange-500">${results.missed}</div>
+                            <p class="text-gray-600 mt-2">Missed</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <div class="text-xl font-bold text-primary">${results.percentageScore}%</div>
+                        <p class="text-gray-600 mt-1">Overall Score</p>
+                    </div>
+                `;
+            } else {
+                // Maze game returns time
+                resultsHTML = `
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-primary">${results.toFixed(1)}s</div>
+                        <p class="text-gray-600 mt-2">Completion Time</p>
+                    </div>
+                `;
+            }
+            
+            resultsContent.innerHTML = resultsHTML;
+            
+            // Scroll to results
+            resultsContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

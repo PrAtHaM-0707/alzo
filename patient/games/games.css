@@ -1,0 +1,130 @@
+/**
+ * ALZO Cognitive Games CSS
+ * 
+ * Additional styles for cognitive assessment games beyond Tailwind classes.
+ * Most styling is handled by Tailwind CSS utility classes.
+ */
+
+/* Game container styles */
+.alzo-game-container {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+/* Animation for correct responses */
+@keyframes pulse-success {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.pulse-success {
+  animation: pulse-success 0.5s ease-in-out;
+}
+
+/* Animation for incorrect responses */
+@keyframes shake-error {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.shake-error {
+  animation: shake-error 0.5s ease-in-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .alzo-game-container {
+    padding: 12px;
+  }
+  
+  canvas {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* Accessibility focus styles */
+.game-control:focus {
+  outline: 2px solid #57B5E7;
+  outline-offset: 2px;
+}
+
+/* Touch-friendly controls for mobile */
+.touch-button {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Game result display */
+.game-result {
+  background-color: #F9FAFB;
+  border-left: 4px solid #57B5E7;
+  padding: 12px;
+  margin-top: 16px;
+  border-radius: 8px;
+}
+
+.game-result.success {
+  border-left-color: #4CAF50;
+}
+
+.game-result.warning {
+  border-left-color: #FF9800;
+}
+
+/* Loading indicator */
+.game-loading {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(87, 181, 231, 0.3);
+  border-radius: 50%;
+  border-top-color: #57B5E7;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Game selection card hover effect */
+.game-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.game-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Game icon styles */
+.game-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background-color: rgba(87, 181, 231, 0.1);
+  color: #57B5E7;
+}
+
+/* Progress indicator */
+.progress-bar {
+  height: 8px;
+  background-color: #E5E7EB;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-value {
+  height: 100%;
+  background-color: #57B5E7;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}

@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ALZO - Patient Dashboard</title>
+    <title>ALZO - Cognitive Assessment Games</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet"/>
+    <link href="./games.css" rel="stylesheet">
     <script src="https://js.pusher.com/8.2/pusher.min.js"></script>
     <script>
         tailwind.config = {
@@ -34,10 +35,6 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         .card { background-color: #F9FAFB; border-radius: 12px; padding: 16px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
-        .checkbox-custom { appearance: none; width: 20px; height: 20px; border: 2px solid #D1D5DB; border-radius: 4px; background-color: white; cursor: pointer; }
-        .checkbox-custom:checked { background-color: #57B5E7; border-color: #57B5E7; }
-        .checkbox-custom:checked::after { content: '✓'; color: white; font-size: 14px; text-align: center; display: block; }
-        .disabled-link { pointer-events: none; opacity: 0.5; }
         #notificationDropdown::-webkit-scrollbar {
             width: 6px;
         }
@@ -66,25 +63,19 @@
         <div class="py-6 px-4">
             <div class="text-2xl font-display text-primary mb-8">ALZO</div>
             <nav class="space-y-4">
-                <a href="/patient/pat.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-primary bg-opacity-10">
+                <a href="/patient/pat.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-home-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Home</span>
+                </a>
+                <a href="/patient/games/tests.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-primary bg-opacity-10">
                     <div class="w-10 h-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center">
-                        <i class="ri-home-line text-lg text-primary"></i>
+                        <i class="ri-brain-line text-lg text-primary"></i>
                     </div>
-                    <span class="text-sm text-primary font-medium">Home</span>
+                    <span class="text-sm text-primary font-medium">Tests</span>
                 </a>
-                <!-- <button class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left" title="Coming soon">
-                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                        <i class="ri-brain-line text-lg text-gray-600"></i>
-                    </div>
-                    <span class="text-sm text-gray-600">Tests</span>
-                </button> -->
-                <a href="/patient/games/tests.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg">
-                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                        <i class="ri-brain-line text-lg text-gray-600"></i>
-                    </div>
-                    <span class="text-sm text-gray-600">Tests</span>
-                </a>
-                <a href="/patient/appointments.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg" title="Coming soon">
+                <a href="/patient/appointments.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg">
                     <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
                         <i class="ri-calendar-line text-lg text-gray-600"></i>
                     </div>
@@ -114,10 +105,9 @@
     <div class="flex-1 ml-64 max-w-7xl mx-auto px-4 py-8">
         <header class="py-4 flex items-center justify-between">
             <div class="flex items-center space-x-4">
-                <div class="text-2xl font-semibold">
-                    <span id="greeting">Good morning</span>, <span id="userName">Patient</span>
+                <div class="text-xl font-semibold">
+                    <span id="userName">Patient</span>
                 </div>
-                <div class="text-lg text-gray-600" id="currentTime">8:30 AM</div>
             </div>
             <div class="flex items-center space-x-4">
                 <div class="relative">
@@ -140,53 +130,100 @@
             </div>
         </header>
         <div id="sosFeedback" class="text-center text-sm mb-4 hidden"></div>
-        <main class="grid grid-cols-2 gap-6">
-            <div class="card">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-semibold">Today's Medications</h2>
-                    <span class="text-sm text-gray-500" id="remainingMedications">0 remaining</span>
+        <main>
+            <div class="mb-8">
+                <h1 class="text-2xl font-semibold mb-2">Cognitive Assessment Games</h1>
+                <p class="text-gray-600">These interactive games help assess cognitive functions like memory, attention, and problem-solving skills.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="card game-card cursor-pointer" onclick="selectGame('clock')">
+                    <div class="flex items-start">
+                        <div class="game-icon text-2xl">
+                            <i class="ri-time-line"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="font-semibold text-lg">Clock Drawing Test</h3>
+                            <p class="text-gray-600 text-sm mt-1">Set the clock hands to show the requested time.</p>
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Visuospatial</span>
+                                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Executive Function</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div id="medicationList" class="space-y-2"></div>
-            </div>
-            <div class="card">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-semibold">Memory Test</h2>
-                    <a href="/patient/games/tests.html" class="text-sm text-primary font-medium hover:underline">Start Test</a>
+                <div class="card game-card cursor-pointer" onclick="selectGame('trail')">
+                    <div class="flex items-start">
+                        <div class="game-icon text-2xl">
+                            <i class="ri-route-line"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="font-semibold text-lg">Trail Making Test</h3>
+                            <p class="text-gray-600 text-sm mt-1">Connect numbered dots in sequential order.</p>
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Visual Attention</span>
+                                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Task Switching</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="text-sm text-gray-500">Take a memory test to assess your cognitive health.</div>
-            </div>
-            <div class="card">
-                <h2 class="text-lg font-semibold mb-4">Educational Videos</h2>
-                <div id="videoList" class="grid grid-cols-1 gap-4"></div>
-            </div>
-            <div class="card">
-                <h2 class="text-lg font-semibold mb-4">Location Tracking</h2>
-                <div id="locationMap" class="w-full h-48 bg-gray-200 rounded-lg overflow-hidden">
-                    <iframe 
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3424.3330402258803!2d76.86975947439485!3d30.877343078631565!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390ff55d9e0ed113%3A0x34a6cadf9a13d341!2sCHITKARA%20UNIVERSITY%2C%20BADDI!5e0!3m2!1sen!2sin!4v1745495014398!5m2!1sen!2sin" 
-                    width="100%" 
-                    height="100%" 
-                    style="border:0;" 
-                    allowfullscreen="" 
-                    loading="lazy" 
-                    referrerpolicy="no-referrer-when-downgrade">
-                </iframe>
-                
+                <div class="card game-card cursor-pointer" onclick="selectGame('nback')">
+                    <div class="flex items-start">
+                        <div class="game-icon text-2xl">
+                            <i class="ri-brain-line"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="font-semibold text-lg">N-Back Memory Test</h3>
+                            <p class="text-gray-600 text-sm mt-1">Press the button when you see a shape that matches the previous one.</p>
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Working Memory</span>
+                                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Attention</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card game-card cursor-pointer" onclick="selectGame('maze')">
+                    <div class="flex items-start">
+                        <div class="game-icon text-2xl">
+                            <i class="ri-compass-3-line"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="font-semibold text-lg">Maze Navigation Task</h3>
+                            <p class="text-gray-600 text-sm mt-1">Navigate through the maze to reach the exit using arrow keys.</p>
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Spatial Navigation</span>
+                                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Problem Solving</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
+            <div id="gameContainer" class="hidden">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 id="gameTitle" class="text-xl font-semibold"></h2>
+                    <button onclick="closeGame()" class="text-gray-500 hover:text-gray-700">
+                        <i class="ri-close-line text-xl"></i>
+                    </button>
+                </div>
+                <div id="gameContent" class="card alzo-game-container"></div>
+            </div>
+            <div id="resultsContainer" class="hidden mt-6">
+                <h3 class="text-lg font-semibold mb-2">Test Results</h3>
+                <div id="resultsContent" class="card"></div>
+            </div>
         </main>
     </div>
-    <script>
+    <script type="module">
+        import ALZOGames from './index.js';
+
         // Notification System
         let notifications = [];
+        let currentUserEmail = null;
         const notificationButton = document.getElementById('notificationButton');
         const notificationDropdown = document.getElementById('notificationDropdown');
         const notificationList = document.getElementById('notificationList');
         const notificationCount = document.getElementById('notificationCount');
         const noNotifications = document.getElementById('noNotifications');
 
-        // Load notifications from LocalStorage for the current user
         function loadNotificationsFromStorage(userEmail) {
             const storedNotifications = localStorage.getItem(`notifications_${userEmail}`);
             if (storedNotifications) {
@@ -194,19 +231,17 @@
                 const now = new Date();
                 notifications = notifications.filter(n => {
                     const notificationTime = new Date(n.time);
-                    return (now - notificationTime) / (1000 * 60 * 60 * 24) <= 7; // Keep notifications from last 7 days
+                    return (now - notificationTime) / (1000 * 60 * 60 * 24) <= 7;
                 });
                 saveNotificationsToStorage(userEmail);
                 updateNotifications();
             }
         }
 
-        // Save notifications to LocalStorage for the current user
         function saveNotificationsToStorage(userEmail) {
             localStorage.setItem(`notifications_${userEmail}`, JSON.stringify(notifications));
         }
 
-        // Clear notifications and remove from LocalStorage
         function clearNotifications(userEmail) {
             notifications = [];
             localStorage.removeItem(`notifications_${userEmail}`);
@@ -226,8 +261,7 @@
                 time: new Date(data.time).toLocaleString()
             });
             updateNotifications();
-            saveNotificationsToStorage(getCurrentUserEmail());
-            loadMedications();
+            saveNotificationsToStorage(currentUserEmail);
         });
 
         channel.bind('appointment-status', function(data) {
@@ -238,7 +272,7 @@
                 time: new Date(data.time).toLocaleString()
             });
             updateNotifications();
-            saveNotificationsToStorage(getCurrentUserEmail());
+            saveNotificationsToStorage(currentUserEmail);
         });
 
         channel.bind('new-video', function(data) {
@@ -249,18 +283,33 @@
                 time: new Date(data.time).toLocaleString()
             });
             updateNotifications();
-            saveNotificationsToStorage(getCurrentUserEmail());
-            loadVideos();
+            saveNotificationsToStorage(currentUserEmail);
+        });
+
+        channel.bind('game-result', function(data) {
+            notifications.push({
+                id: data.id,
+                type: 'Game Result',
+                message: `Completed ${data.gameType} with score: ${data.score || data.percentageScore || data.time || 'N/A'}`,
+                time: new Date(data.time).toLocaleString()
+            });
+            updateNotifications();
+            saveNotificationsToStorage(currentUserEmail);
         });
 
         function updateNotifications() {
             if (notifications.length > 50) {
-                notifications = notifications.slice(-50); // Keep only the latest 50 notifications
+                notifications = notifications.slice(-50);
             }
             notificationList.innerHTML = notifications.map(notification => `
                 <div class="p-4 flex items-center justify-between hover:bg-gray-50">
                     <div class="flex items-center space-x-3">
-                        <i class="ri-${notification.type === 'Medication' ? 'capsule-line' : notification.type === 'Appointment' ? 'calendar-line' : 'video-line'} text-primary"></i>
+                        <i class="ri-${
+                            notification.type === 'Medication' ? 'capsule-line' :
+                            notification.type === 'Appointment' ? 'calendar-line' :
+                            notification.type === 'Video' ? 'video-line' :
+                            'brain-line'
+                        } text-primary"></i>
                         <div>
                             <p class="font-medium text-gray-700">${notification.type}</p>
                             <p class="text-sm text-gray-500">${notification.message}</p>
@@ -272,12 +321,6 @@
             noNotifications.classList.toggle('hidden', notifications.length > 0);
             notificationCount.textContent = notifications.length;
             notificationCount.classList.toggle('hidden', notifications.length === 0);
-        }
-
-        // Get current user email
-        let currentUserEmail = null;
-        function getCurrentUserEmail() {
-            return currentUserEmail;
         }
 
         notificationButton.addEventListener('click', () => {
@@ -339,86 +382,6 @@
             const userData = await checkAuth();
             if (!userData) return;
             document.getElementById('userName').textContent = userData.name || 'Patient';
-            const hour = new Date().getHours();
-            const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-            document.getElementById('greeting').textContent = greeting;
-            document.getElementById('currentTime').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
-
-        async function loadMedications() {
-            try {
-                const response = await fetch('/api/auth/patient/medications', {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                });
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Failed to fetch medications');
-                }
-                const medications = await response.json();
-                const medicationList = document.getElementById('medicationList');
-                const remaining = medications.filter(med => !med.taken).length;
-                document.getElementById('remainingMedications').textContent = `${remaining} remaining`;
-                medicationList.innerHTML = medications.length ? medications.map(med => `
-                    <div class="flex items-center justify-between p-2 bg-white rounded-md">
-                        <div class="flex items-center">
-                            <input type="checkbox" class="checkbox-custom" ${med.taken ? 'checked' : ''} onchange="updateMedication('${med._id}', this.checked)">
-                            <div class="ml-3">
-                                <p class="text-sm font-medium">${med.name}</p>
-                                <p class="text-xs text-gray-500">${med.time}</p>
-                            </div>
-                        </div>
-                        <span class="text-xs ${med.taken ? 'text-green-500' : 'text-gray-500'}">${med.taken ? 'Taken' : 'Pending'}</span>
-                    </div>
-                `).join('') : '<p class="text-sm text-gray-500">No medications for today.</p>';
-            } catch (err) {
-                console.error('Load medications error:', err.message);
-                document.getElementById('medicationList').innerHTML = `<p class="text-sm text-red-500">${err.message || 'Failed to load medications.'}</p>`;
-            }
-        }
-
-        async function updateMedication(medicationId, taken) {
-            try {
-                const response = await fetch(`/api/auth/patient/medications/${medicationId}`, {
-                    method: 'PATCH',
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                });
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Failed to update medication');
-                }
-                console.log(`Medication ${medicationId} updated to taken: ${taken}`);
-                loadMedications();
-            } catch (err) {
-                console.error('Update medication error:', err.message);
-            }
-        }
-
-        async function loadVideos() {
-            try {
-                const response = await fetch('/api/auth/patient/videos', {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                });
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Failed to fetch videos');
-                }
-                const videos = await response.json();
-                const videoList = document.getElementById('videoList');
-                videoList.innerHTML = videos.length
-                    ? videos.map(video => `
-                        <div class="p-4 bg-white rounded-lg shadow-md flex items-start space-x-4">
-                            <div class="flex-1">
-                                <h3 class="text-lg font-semibold text-gray-900">${video.title}</h3>
-                                <p class="text-sm text-gray-600 mb-2">${video.description || 'No description available'}</p>
-                                <a href="${video.url}" target="_blank" class="text-sm text-primary font-medium hover:underline">Watch Video</a>
-                            </div>
-                        </div>
-                    `).join('')
-                    : '<p class="text-sm text-gray-500 font-medium">No educational videos are currently available for you.</p>';
-            } catch (err) {
-                console.error('Load videos error:', err.message);
-                document.getElementById('videoList').innerHTML = `<p class="text-sm text-red-500">${err.message || 'Failed to load videos.'}</p>`;
-            }
         }
 
         async function sendSosAlert() {
@@ -462,13 +425,112 @@
             window.location.href = '/login';
         }
 
+        let currentGame = null;
+
+        window.selectGame = async function(gameType) {
+            document.getElementById('gameContainer').classList.remove('hidden');
+            document.getElementById('resultsContainer').classList.add('hidden');
+            const gameDesc = ALZOGames.getGameDescription(gameType);
+            document.getElementById('gameTitle').textContent = gameDesc.title;
+            const gameContent = document.getElementById('gameContent');
+            gameContent.innerHTML = '';
+            currentGame = ALZOGames.init(gameType, gameContent, {}, handleGameComplete);
+            document.getElementById('gameContainer').scrollIntoView({ behavior: 'smooth' });
+        };
+
+        window.closeGame = function() {
+            document.getElementById('gameContainer').classList.add('hidden');
+            document.getElementById('resultsContainer').classList.add('hidden');
+            currentGame = null;
+        };
+
+        async function handleGameComplete(results) {
+            console.log('Game completed with results:', results);
+            const resultsContainer = document.getElementById('resultsContainer');
+            const resultsContent = document.getElementById('resultsContent');
+            resultsContainer.classList.remove('hidden');
+
+            let resultsHTML = '';
+            if (typeof results === 'number') {
+                resultsHTML = `
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-primary">${results}%</div>
+                        <p class="text-gray-600 mt-2">Accuracy Score</p>
+                    </div>
+                `;
+            } else if (results.time !== undefined && results.errors !== undefined) {
+                resultsHTML = `
+                    <div class="grid grid-cols-2 gap-4 text-center">
+                        <div>
+                            <div class="text-3xl font-bold text-primary">${results.time.toFixed(1)}s</div>
+                            <p class="text-gray-600 mt-2">Completion Time</p>
+                        </div>
+                        <div>
+                            <div class="text-3xl font-bold text-primary">${results.errors}</div>
+                            <p class="text-gray-600 mt-2">Errors</p>
+                        </div>
+                    </div>
+                `;
+            } else if (results.correct !== undefined) {
+                resultsHTML = `
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <div>
+                            <div class="text-3xl font-bold text-green-500">${results.correct}</div>
+                            <p class="text-gray-600 mt-2">Correct</p>
+                        </div>
+                        <div>
+                            <div class="text-3xl font-bold text-red-500">${results.incorrect}</div>
+                            <p class="text-gray-600 mt-2">Incorrect</p>
+                        </div>
+                        <div>
+                            <div class="text-3xl font-bold text-orange-500">${results.missed}</div>
+                            <p class="text-gray-600 mt-2">Missed</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <div class="text-xl font-bold text-primary">${results.percentageScore}%</div>
+                        <p class="text-gray-600 mt-1">Overall Score</p>
+                    </div>
+                `;
+            } else {
+                resultsHTML = `
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-primary">${results.toFixed(1)}s</div>
+                        <p class="text-gray-600 mt-2">Completion Time</p>
+                    </div>
+                `;
+            }
+
+            resultsContent.innerHTML = resultsHTML;
+            resultsContainer.scrollIntoView({ behavior: 'smooth' });
+
+            try {
+                const response = await fetch('/api/auth/patient/games', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        gameType: currentGame.gameType,
+                        results
+                    })
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to save game results');
+                }
+                console.log('Game results saved:', results);
+            } catch (err) {
+                console.error('Save game results error:', err.message);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             console.log('DOM loaded, loading patient data');
             loadUserData();
-            loadMedications();
-            loadVideos();
-            document.getElementById('logoutButton').addEventListener('click', handleLogout);
             updateNotifications();
+            document.getElementById('logoutButton').addEventListener('click', handleLogout);
         });
     </script>
 </body>

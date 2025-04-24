@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALZO - Game Records</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet"/>
+    <script src="https://js.pusher.com/8.2/pusher.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#57B5E7',
+                        secondary: '#8DD3C7',
+                        card: '#F9FAFB'
+                    },
+                    borderRadius: {
+                        button: '8px',
+                        card: '12px'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Pacifico', 'cursive']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .card { background-color: #F9FAFB; border-radius: 12px; padding: 16px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+        .checkbox-custom { appearance: none; width: 20px; height: 20px; border: 2px solid #D1D5DB; border-radius: 4px; background-color: white; cursor: pointer; }
+        .checkbox-custom:checked { background-color: #57B5E7; border-color: #57B5E7; }
+        .checkbox-custom:checked::after { content: '✓'; color: white; font-size: 14px; text-align: center; display: block; }
+        .disabled-link { pointer-events: none; opacity: 0.5; }
+        #notificationDropdown::-webkit-scrollbar {
+            width: 6px;
+        }
+        #notificationDropdown::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        #notificationDropdown::-webkit-scrollbar-thumb {
+            background: #57B5E7;
+            border-radius: 3px;
+        }
+        #notificationDropdown::-webkit-scrollbar-thumb:hover {
+            background: #4a9fd5;
+        }
+        .animate-slide-down {
+            animation: slideDown 0.3s ease-out;
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-10%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex">
+    <aside class="fixed top-0 left-0 w-64 h-full bg-white shadow-lg">
+        <div class="py-6 px-4">
+            <div class="text-2xl font-display text-primary mb-8">ALZO</div>
+            <nav class="space-y-4">
+                <a href="/patient/pat.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-home-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Home</span>
+                </a>
+                <a href="/patient/games/tests.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-brain-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Tests</span>
+                </a>
+                <a href="/patient/appointments.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg" title="Coming soon">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-calendar-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Appointments</span>
+                </a>
+
+                <a href="/patient/game-records.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-bar-chart-2-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Game Records</span>
+                </a>
+                <a href="/patient/profile.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-user-settings-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Profile</span>
+                </a>
+               
+                <button id="logoutButton" class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-logout-box-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Logout</span>
+                </button>
+            </nav>
+        </div>
+    </aside>
+    <div class="flex-1 ml-64 max-w-7xl mx-auto px-4 py-8">
+        <header class="py-4">
+            <h1 class="text-2xl font-semibold">Game Records</h1>
+        </header>
+        <div class="card">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold">Your Game History</h2>
+                <button id="clearRecordsButton" class="text-sm text-primary hover:underline">Clear All Records</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-600">
+                    <thead class="text-xs uppercase bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-3">Game</th>
+                            <th class="px-4 py-3">Results</th>
+                            <th class="px-4 py-3">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="gameRecordsTable" class="divide-y"></tbody>
+                </table>
+            </div>
+            <div id="noRecords" class="p-4 text-center text-sm text-gray-500 hidden">No game records available.</div>
+        </div>
+    </div>
+    <script>
+        // Authentication and user data
+        let currentUserEmail = null;
+        async function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login';
+                return null;
+            }
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) {
+                    throw new Error('Authentication failed');
+                }
+                const data = await response.json();
+                if (data.role !== 'patient') {
+                    window.location.href = '/role';
+                    return null;
+                }
+                currentUserEmail = data.email;
+                return data;
+            } catch (err) {
+                localStorage.removeItem('token');
+                window.location.href = '/login';
+                return null;
+            }
+        }
+
+        async function loadUserData() {
+            const userData = await checkAuth();
+            if (!userData) return;
+            document.getElementById('userName').textContent = userData.name || 'Patient';
+            const hour = new Date().getHours();
+            const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+            document.getElementById('greeting').textContent = greeting;
+            document.getElementById('currentTime').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Load and display game records
+        function loadGameRecords() {
+            const gameRecords = JSON.parse(localStorage.getItem('gameRecords')) || [];
+            const gameRecordsTable = document.getElementById('gameRecordsTable');
+            const noRecords = document.getElementById('noRecords');
+
+            if (gameRecords.length === 0) {
+                noRecords.classList.remove('hidden');
+                gameRecordsTable.innerHTML = '';
+                return;
+            }
+
+            noRecords.classList.add('hidden');
+            gameRecordsTable.innerHTML = gameRecords.map(record => {
+                // Format the results based on the game type
+                let resultText = '';
+                switch (record.game) {
+                    case 'clock':
+                        resultText = `Score: ${record.results.score}`;
+                        break;
+                    case 'maze':
+                        resultText = `Time: ${Math.floor(record.results.time / 60)}:${(record.results.time % 60).toFixed(0).padStart(2, '0')}`;
+                        break;
+                    case 'nback':
+                        resultText = `Score: ${record.results.percentageScore}% (Correct: ${record.results.correct}/${record.results.total})`;
+                        break;
+                    case 'trail':
+                        resultText = `Time: ${record.results.time.toFixed(1)}s, Errors: ${record.results.errors}`;
+                        break;
+                    case 'alzo':
+                        resultText = `Score: ${record.results.score}`;
+                        break;
+                    default:
+                        resultText = 'Unknown game';
+                }
+
+                // Format the timestamp
+                const date = new Date(record.timestamp).toLocaleString();
+
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 capitalize">${record.game}</td>
+                        <td class="px-4 py-3">${resultText}</td>
+                        <td class="px-4 py-3">${date}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Clear all game records
+        function clearGameRecords() {
+            localStorage.removeItem('gameRecords');
+            loadGameRecords();
+        }
+
+        // Logout functionality
+        function handleLogout() {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUserData();
+            loadGameRecords();
+            document.getElementById('logoutButton').addEventListener('click', handleLogout);
+            document.getElementById('clearRecordsButton').addEventListener('click', clearGameRecords);
+        });
+    </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 const express = require('express');
-const { body, validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
+const { body, validationResult } = require('express-validator');
 const { customAlphabet } = require('nanoid');
 const User = require('../models/User');
 const Medication = require('../models/Medication');
@@ -8,7 +8,6 @@ const Video = require('../models/Video');
 const Appointment = require('../models/Appointment');
 const SosAlert = require('../models/SosAlert');
 const CaregiverPatient = require('../models/CaregiverPatient');
-const pusher = require('../config/pusher');
 
 const router = express.Router();
 
@@ -21,7 +20,7 @@ const authenticateToken = (req, res, next) => {
   }
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded.user; // Expects { user: { id, email } }
+    req.user = decoded.user;
     console.log('Token verified, user ID:', req.user.id);
     next();
   } catch (err) {
@@ -33,45 +32,43 @@ const authenticateToken = (req, res, next) => {
 const nanoid = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 8);
 
 // Signup
-router.post('/signup', [
-  body('name').notEmpty().withMessage('Name is required'),
-  body('email').isEmail().withMessage('Valid email is required'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
-], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-      console.log('Validation errors:', errors.array());
-      return res.status(400).json({ errors: errors.array() });
-  }
-  const { name, email, password } = req.body;
-  try {
+router.post(
+  '/signup',
+  [
+    body('name').notEmpty().withMessage('Name is required'),
+    body('email').isEmail().withMessage('Valid email is required'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log('Signup validation errors:', errors.array());
+      return res.status(400).json({ message: errors.array()[0].msg });
+    }
+    const { name, email, password } = req.body;
+    console.log('Signup request:', { name, email: email.toLowerCase() });
+    try {
       const existingUser = await User.findOne({ email: email.toLowerCase() });
       if (existingUser) {
-          console.log('User already exists:', email);
-          return res.status(400).json({ message: 'User already exists' });
+        console.log('User already exists:', email.toLowerCase());
+        return res.status(400).json({ message: 'User already exists' });
       }
-      const now = new Date();
       const newUser = new User({
-          name,
-          email: email.toLowerCase(),
-          password
+        name,
+        email: email.toLowerCase(),
+        password,
       });
-      // Prevent future createdAt dates
-      if (newUser.createdAt > now) {
-          console.warn('Future createdAt detected in signup:', newUser.createdAt);
-          newUser.createdAt = now;
-          newUser.updatedAt = now;
-      }
       await newUser.save();
-      console.log('User signed up:', email);
-      // Fixed JWT payload
-      const token = jwt.sign({ user: { id: newUser._id, email: newUser.email } }, process.env.JWT_SECRET, { expiresIn: '1h' });
-      res.json({ token });
-  } catch (err) {
+      console.log('User created:', newUser.email);
+      const payload = { user: { id: newUser.id } };
+      const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+      res.status(201).json({ token, message: 'User created successfully' });
+    } catch (err) {
       console.error('Signup error:', err.message);
       res.status(500).json({ message: 'Server error', error: err.message });
+    }
   }
-});
+);
 
 // Login
 router.post(
@@ -101,8 +98,8 @@ router.post(
         return res.status(400).json({ message: 'Invalid credentials' });
       }
       console.log('Login successful for email:', user.email);
-      // Fixed JWT payload
-      const token = jwt.sign({ user: { id: user.id, email: user.email } }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      const payload = { user: { id: user.id } };
+      const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
       let redirectUrl = '/role';
       if (user.role) {
         switch (user.role) {
@@ -150,51 +147,29 @@ router.get('/me', authenticateToken, async (req, res) => {
 });
 
 // Select role
-router.post('/select-role', authenticateToken, [
-  body('role').isIn(['patient', 'caregiver', 'doctor']).withMessage('Invalid role'),
-  body('specialty').if((value, { req }) => req.body.role === 'doctor').notEmpty().withMessage('Specialty is required for doctors')
-], async (req, res) => {
+router.post('/select-role', authenticateToken, async (req, res) => {
+  const { role } = req.body;
+  if (!['patient', 'caregiver', 'doctor'].includes(role)) {
+    console.log('Invalid role selected:', role);
+    return res.status(400).json({ message: 'Invalid role' });
+  }
   try {
-      const user = await User.findById(req.user.id);
-      if (!user) {
-          console.log('User not found:', req.user.id);
-          return res.status(404).json({ message: 'User not found' });
-      }
-      if (user.role) {
-          console.log('Role already set:', user.email, user.role);
-          return res.status(400).json({ message: 'Role already set' });
-      }
-      user.role = req.body.role;
-      if (req.body.role === 'patient') {
-          user.condition = req.body.condition || 'Stable';
-          if (!user.patientId) {
-              user.patientId = nanoid(); // Assign patientId using nanoid
-          }
-      } else if (req.body.role === 'doctor') {
-          user.specialty = req.body.specialty;
-      }
-      const now = new Date();
-      if (user.createdAt > now) {
-          console.warn('Future createdAt detected in select-role:', user.createdAt);
-          user.createdAt = now;
-          user.updatedAt = now;
-      }
-      await user.save();
-      console.log('Role selected:', user.email, user.role, 'patientId:', user.patientId || 'none');
-      // Define redirect based on role
-      const redirects = {
-          patient: '/patient/pat.html',
-          caregiver: '/caregiver/care.html',
-          doctor: '/doctor/doc.html'
-      };
-      res.json({ 
-          message: 'Role selected successfully', 
-          role: user.role, 
-          redirect: redirects[user.role] 
-      });
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      console.log('User not found for ID:', req.user.id);
+      return res.status(404).json({ message: 'User not found' });
+    }
+    user.role = role;
+    if (role === 'patient' && !user.patientId) {
+      user.patientId = nanoid();
+      console.log('Generated patientId:', user.patientId);
+    }
+    await user.save();
+    console.log('Role updated:', { email: user.email, role });
+    res.json({ message: 'Role updated successfully', role, patientId: user.patientId });
   } catch (err) {
-      console.error('Select role error:', err.message);
-      res.status(500).json({ message: 'Server error', error: err.message });
+    console.error('Select role error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
 
@@ -202,6 +177,10 @@ router.post('/select-role', authenticateToken, [
 router.patch('/doctor/patients/:id/condition', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
+    // if (user.role !== 'doctor') {
+    //   console.log('Unauthorized access to update condition:', user.email);
+    //   return res.status(403).json({ message: 'Unauthorized' });
+    // }
     const patient = await User.findById(req.params.id);
     if (!patient || patient.role !== 'patient') {
       console.log('Patient not found:', req.params.id);
@@ -215,12 +194,6 @@ router.patch('/doctor/patients/:id/condition', authenticateToken, async (req, re
     patient.condition = condition;
     await patient.save();
     console.log(`Patient ${patient._id} condition updated to ${condition}`);
-    pusher.trigger('notifications', 'patient-condition-update', {
-      id: patient._id,
-      patientName: patient.name,
-      condition,
-      time: new Date()
-    });
     res.json({ message: 'Condition updated', condition });
   } catch (err) {
     console.error('Update condition error:', err.message);
@@ -301,13 +274,20 @@ router.post(
     }
     const { patientId } = req.body;
     console.log('Add patient request:', { userId: req.user.id, patientId });
+
     try {
       const user = await User.findById(req.user.id);
+      // if (user.role !== 'caregiver') {
+      //   console.log('Unauthorized access to add patient:', user.email);
+      //   return res.status(403).json({ message: 'Unauthorized' });
+      // }
+
       const patient = await User.findOne({ patientId, role: 'patient' });
       if (!patient) {
         console.log('Patient not found for ID:', patientId);
         return res.status(404).json({ message: 'Patient not found' });
       }
+
       const existingAssociation = await CaregiverPatient.findOne({
         caregiverId: req.user.id,
         patientId: patient._id
@@ -316,17 +296,13 @@ router.post(
         console.log('Patient already associated:', patientId);
         return res.status(400).json({ message: 'Patient already in your list' });
       }
+
       const association = new CaregiverPatient({
         caregiverId: req.user.id,
         patientId: patient._id
       });
       await association.save();
       console.log('Patient added to caregiver:', { caregiver: user.email, patientId });
-      pusher.trigger('notifications', 'new-patient-added', {
-        id: association._id,
-        patientName: patient.name,
-        time: new Date()
-      });
       res.status(201).json({ message: 'Patient added successfully', patientId });
     } catch (err) {
       console.error('Add patient error:', err.message);
@@ -334,6 +310,7 @@ router.post(
     }
   }
 );
+
 // Remove patient from caregiver's list
 router.delete(
   '/caregiver/remove-patient',
@@ -350,7 +327,12 @@ router.delete(
 
     try {
       const user = await User.findById(req.user.id);
-   const patient = await User.findOne({ patientId, role: 'patient' });
+      // if (user.role !== 'caregiver') {
+      //   console.log('Unauthorized access to remove patient:', user.email);
+      //   return res.status(403).json({ message: 'Unauthorized' });
+      // }
+
+      const patient = await User.findOne({ patientId, role: 'patient' });
       if (!patient) {
         console.log('Patient not found for ID:', patientId);
         return res.status(404).json({ message: 'Patient not found' });
@@ -387,13 +369,20 @@ router.post(
     }
     const { patientId } = req.body;
     console.log('Caregiver SOS request:', { userId: req.user.id, patientId });
+
     try {
       const user = await User.findById(req.user.id);
+      // if (user.role !== 'caregiver') {
+      //   console.log('Unauthorized access to send SOS:', user.email);
+      //   return res.status(403).json({ message: 'Unauthorized' });
+      // }
+
       const patient = await User.findOne({ patientId, role: 'patient' });
       if (!patient) {
         console.log('Patient not found for ID:', patientId);
         return res.status(404).json({ message: 'Patient not found' });
       }
+
       const association = await CaregiverPatient.findOne({
         caregiverId: req.user.id,
         patientId: patient._id
@@ -402,11 +391,13 @@ router.post(
         console.log('Patient not associated with caregiver:', patientId);
         return res.status(403).json({ message: 'You are not managing this patient' });
       }
+
       const doctors = await User.find({ role: 'doctor' });
       if (doctors.length === 0) {
         console.log('No doctors found for SOS alert');
         return res.status(404).json({ message: 'No doctors available' });
       }
+
       const sosAlerts = doctors.map(doctor => ({
         patientId: patient._id,
         doctorId: doctor._id,
@@ -414,15 +405,8 @@ router.post(
         status: 'active',
         createdAt: new Date()
       }));
-      const insertedAlerts = await SosAlert.insertMany(sosAlerts);
+      await SosAlert.insertMany(sosAlerts);
       console.log(`SOS alert sent by caregiver ${user.email} for patient ${patientId} to ${doctors.length} doctors`);
-      insertedAlerts.forEach(alert => {
-        pusher.trigger('notifications', 'new-sos-alert', {
-          id: alert._id,
-          patientName: patient.name,
-          time: alert.createdAt
-        });
-      });
       res.status(201).json({ message: 'SOS alert sent successfully' });
     } catch (err) {
       console.error('Send SOS error:', err.message);
@@ -437,7 +421,12 @@ router.get('/caregiver/stats', authenticateToken, async (req, res) => {
 
   try {
     const user = await User.findById(req.user.id);
-  const associations = await CaregiverPatient.find({ caregiverId: req.user.id });
+    // if (user.role !== 'caregiver') {
+    //   console.log('Unauthorized access to stats:', user.email);
+    //   return res.status(403).json({ message: 'Unauthorized' });
+    // }
+
+    const associations = await CaregiverPatient.find({ caregiverId: req.user.id });
     const patientIds = associations.map(assoc => assoc.patientId);
 
     const totalPatients = patientIds.length;
@@ -485,7 +474,12 @@ router.get('/caregiver/patients', authenticateToken, async (req, res) => {
 
   try {
     const user = await User.findById(req.user.id);
-  const associations = await CaregiverPatient.find({ caregiverId: req.user.id });
+    // if (user.role !== 'caregiver') {
+    //   console.log('Unauthorized access to patients:', user.email);
+    //   return res.status(403).json({ message: 'Unauthorized' });
+    // }
+
+    const associations = await CaregiverPatient.find({ caregiverId: req.user.id });
     const patientIds = associations.map(assoc => assoc.patientId);
 
     const patients = await User.find({ _id: { $in: patientIds }, role: 'patient' }).select('name patientId condition');
@@ -509,7 +503,12 @@ router.get('/caregiver/patient/:patientId', authenticateToken, async (req, res) 
 
   try {
     const user = await User.findById(req.user.id);
-   const patient = await User.findOne({ patientId, role: 'patient' }).select('name email patientId condition');
+    // if (user.role !== 'caregiver') {
+    //   console.log('Unauthorized access to patient details:', user.email);
+    //   return res.status(403).json({ message: 'Unauthorized' });
+    // }
+
+    const patient = await User.findOne({ patientId, role: 'patient' }).select('name email patientId condition');
     if (!patient) {
       console.log('Patient not found for ID:', patientId);
       return res.status(404).json({ message: 'Patient not found' });
@@ -546,8 +545,9 @@ router.get('/caregiver/patient/:patientId', authenticateToken, async (req, res) 
       .populate('doctorId', 'name')
       .sort({ createdAt: -1 });
 
+    // Mock vital signs (since no schema exists for vitals)
     const vitalSigns = {
-      bloodPressure: '120/80',
+      bloodPressure: '120/80', // Replace with real data if available
       lastCheck: new Date().toISOString()
     };
 
@@ -558,8 +558,8 @@ router.get('/caregiver/patient/:patientId', authenticateToken, async (req, res) 
         email: patient.email,
         patientId: patient.patientId,
         condition: patient.condition,
-        age: 70, 
-        room: 'Unknown'
+        age: 70, // Mock data; replace with real data if available
+        room: 'Unknown' // Mock data; replace with real data if available
       },
       medications,
       appointments,
@@ -576,6 +576,11 @@ router.get('/caregiver/patient/:patientId', authenticateToken, async (req, res) 
 router.get('/caregiver/profile', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('name email sosNumber');
+    // if (user.role !== 'caregiver') {
+    //   console.log('Unauthorized access to caregiver profile:', user.email);
+    //   return res.status(403).json({ message: 'Unauthorized' });
+    // }
+    console.log('Caregiver profile fetched:', user.email);
     res.json({ name: user.name, email: user.email, sosNumber: user.sosNumber || '' });
   } catch (err) {
     console.error('Get caregiver profile error:', err.message);
@@ -602,6 +607,10 @@ router.patch(
 
     try {
       const user = await User.findById(req.user.id);
+      // if (user.role !== 'caregiver') {
+      //   console.log('Unauthorized access to update profile:', user.email);
+      //   return res.status(403).json({ message: 'Unauthorized' });
+      // }
       user.name = name;
       user.sosNumber = sosNumber || '';
       await user.save();
@@ -633,12 +642,16 @@ router.patch(
 
     try {
       const user = await User.findById(req.user.id);
-      const isMatch = currentPassword === user.password; 
+      // if (user.role !== 'caregiver') {
+      //   console.log('Unauthorized access to change password:', user.email);
+      //   return res.status(403).json({ message: 'Unauthorized' });
+      // }
+      const isMatch = currentPassword === user.password; // Replace with bcrypt.compare if hashing
       if (!isMatch) {
         console.log('Current password incorrect for user:', user.email);
         return res.status(400).json({ message: 'Current password is incorrect' });
       }
-      user.password = newPassword; 
+      user.password = newPassword; // Replace with hashed password
       await user.save();
       console.log('Password changed for user:', user.email);
       res.json({ message: 'Password changed successfully' });
@@ -656,6 +669,11 @@ router.post('/caregiver/validate-patient', authenticateToken, async (req, res) =
 
   try {
     const user = await User.findById(req.user.id);
+    // if (user.role !== 'caregiver') {
+    //   console.log('Unauthorized access to validate patient:', user.email);
+    //   return res.status(403).json({ message: 'Unauthorized' });
+    // }
+
     const patient = await User.findOne({ patientId, role: 'patient' });
     if (!patient) {
       console.log('Patient not found for ID:', patientId);
@@ -674,6 +692,11 @@ router.post('/caregiver/validate-patient', authenticateToken, async (req, res) =
 router.get('/doctor/profile', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('name email specialty');
+    // if (user.role !== 'doctor') {
+    //   console.log('Unauthorized access to doctor profile:', user.email);
+    //   return res.status(403).json({ message: 'Unauthorized' });
+    // }
+    console.log('Doctor profile fetched:', user.email);
     res.json({ name: user.name, email: user.email, specialty: user.specialty || '' });
   } catch (err) {
     console.error('Get doctor profile error:', err.message);
@@ -699,7 +722,11 @@ router.patch(
     console.log('Update doctor profile request:', { userId: req.user.id, name, specialty });
     try {
       const user = await User.findById(req.user.id);
-    user.name = name;
+      // if (user.role !== 'doctor') {
+      //   console.log('Unauthorized access to update profile:', user.email);
+      //   return res.status(403).json({ message: 'Unauthorized' });
+      // }
+      user.name = name;
       user.specialty = specialty || '';
       await user.save();
       console.log('Doctor profile updated:', { email: user.email, name, specialty });
@@ -715,6 +742,11 @@ router.patch(
 router.get('/patient/profile', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('name email sosNumber');
+    // if (user.role !== 'patient') {
+    //   console.log('Unauthorized access to patient profile:', user.email);
+    //   return res.status(403).json({ message: 'Unauthorized' });
+    // }
+    console.log('Patient profile fetched:', user.email);
     res.json({ name: user.name, email: user.email, sosNumber: user.sosNumber || '' });
   } catch (err) {
     console.error('Get patient profile error:', err.message);
@@ -740,7 +772,11 @@ router.patch(
     console.log('Change password request:', { userId: req.user.id });
     try {
       const user = await User.findById(req.user.id);
-     const isMatch = currentPassword === user.password; // Replace with bcrypt.compare if hashing
+      // if (user.role !== 'patient') {
+      //   console.log('Unauthorized access to change password:', user.email);
+      //   return res.status(403).json({ message: 'Unauthorized' });
+      // }
+      const isMatch = currentPassword === user.password; // Replace with bcrypt.compare if hashing
       if (!isMatch) {
         console.log('Current password incorrect for user:', user.email);
         return res.status(400).json({ message: 'Current password is incorrect' });
@@ -774,6 +810,10 @@ router.patch(
     console.log('Change password request:', { userId: req.user.id });
     try {
       const user = await User.findById(req.user.id);
+      // if (user.role !== 'doctor') {
+      //   console.log('Unauthorized access to change password:', user.email);
+      //   return res.status(403).json({ message: 'Unauthorized' });
+      // }
       const isMatch = currentPassword === user.password;
       if (!isMatch) {
         console.log('Current password incorrect for user:', user.email);
@@ -794,7 +834,11 @@ router.patch(
 router.get('/doctor/stats', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-   const totalPatients = await User.countDocuments({ role: 'patient' });
+    // if (user.role !== 'doctor') {
+    //   console.log('Unauthorized access to stats:', user.email);
+    //   return res.status(403).json({ message: 'Unauthorized' });
+    // }
+    const totalPatients = await User.countDocuments({ role: 'patient' });
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
@@ -826,7 +870,11 @@ router.get('/doctor/stats', authenticateToken, async (req, res) => {
 router.get('/doctor/patients', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-   const patients = await User.find({ role: 'patient' }).select('name email patientId condition');
+    // if (user.role !== 'doctor') {
+    //   console.log('Unauthorized access to patients:', user.email);
+    //   return res.status(403).json({ message: 'Unauthorized' });
+    // }
+    const patients = await User.find({ role: 'patient' }).select('name email patientId condition');
     console.log('Patients fetched:', patients.length);
     res.json(patients);
   } catch (err) {
@@ -839,7 +887,11 @@ router.get('/doctor/patients', authenticateToken, async (req, res) => {
 router.get('/doctors', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-   const doctors = await User.find({ role: 'doctor' }).select('name _id specialty');
+    // if (user.role !== 'patient') {
+    //   console.log('Unauthorized access to doctors list:', user.email);
+    //   return res.status(403).json({ message: 'Unauthorized' });
+    // }
+    const doctors = await User.find({ role: 'doctor' }).select('name _id specialty');
     console.log('Doctors fetched:', doctors.length);
     res.json(doctors);
   } catch (err) {
@@ -852,6 +904,10 @@ router.get('/doctors', authenticateToken, async (req, res) => {
 router.get('/doctor/appointments', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
+    // if (user.role !== 'doctor') {
+    //   console.log('Unauthorized access to appointments:', user.email);
+    //   return res.status(403).json({ message: 'Unauthorized' });
+    // }
     const appointments = await Appointment.find({ doctorId: req.user.id })
       .populate('patientId', 'name email')
       .sort({ createdAt: -1 });
@@ -867,6 +923,10 @@ router.get('/doctor/appointments', authenticateToken, async (req, res) => {
 router.patch('/doctor/appointments/:id', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
+    // if (user.role !== 'doctor') {
+    //   console.log('Unauthorized access to update appointment:', user.email);
+    //   return res.status(403).json({ message: 'Unauthorized' });
+    // }
     const { status } = req.body;
     if (!['approved', 'rejected'].includes(status)) {
       console.log('Invalid status:', status);
@@ -880,12 +940,6 @@ router.patch('/doctor/appointments/:id', authenticateToken, async (req, res) => 
     appointment.status = status;
     await appointment.save();
     console.log(`Appointment ${appointment._id} updated to ${status}`);
-    const patient = await User.findById(appointment.patientId).select('name');
-    pusher.trigger('notifications', 'appointment-status', {
-      id: appointment._id,
-      status,
-      time: new Date()
-    });
     res.json({ message: 'Appointment updated', appointment });
   } catch (err) {
     console.error('Update appointment error:', err.message);
@@ -912,6 +966,10 @@ router.post(
     console.log('Add medication request:', { patientId, name, time });
     try {
       const user = await User.findById(req.user.id);
+      // if (user.role !== 'doctor') {
+      //   console.log('Unauthorized access to add medication:', user.email);
+      //   return res.status(403).json({ message: 'Unauthorized' });
+      // }
       const patient = await User.findOne({ patientId });
       if (!patient || patient.role !== 'patient') {
         console.log('Patient not found:', patientId);
@@ -926,11 +984,6 @@ router.post(
       });
       await medication.save();
       console.log('Medication added:', { patientId, name });
-      pusher.trigger('notifications', 'new-medication', {
-        id: medication._id,
-        name,
-        time: new Date()
-      });
       res.status(201).json({ message: 'Medication added successfully', medication });
     } catch (err) {
       console.error('Add medication error:', err.message);
@@ -943,7 +996,11 @@ router.post(
 router.get('/patient/medications', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-   const today = new Date();
+    // if (user.role !== 'patient') {
+    //   console.log('Unauthorized access to medications:', user.email);
+    //   return res.status(403).json({ message: 'Unauthorized' });
+    // }
+    const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -963,6 +1020,10 @@ router.get('/patient/medications', authenticateToken, async (req, res) => {
 router.patch('/patient/medications/:id', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
+    // if (user.role !== 'patient') {
+    //   console.log('Unauthorized access to update medication:', user.email);
+    //   return res.status(403).json({ message: 'Unauthorized' });
+    // }
     const medication = await Medication.findById(req.params.id);
     if (!medication || medication.patientId.toString() !== req.user.id) {
       console.log('Medication not found or unauthorized:', req.params.id);
@@ -982,6 +1043,10 @@ router.patch('/patient/medications/:id', authenticateToken, async (req, res) => 
 router.get('/patient/videos', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
+    // if (user.role !== 'patient') {
+    //   console.log('Unauthorized access to videos:', user.email);
+    //   return res.status(403).json({ message: 'Unauthorized' });
+    // }
     const videos = await Video.find();
     console.log('Videos fetched:', videos.length);
     res.json(videos);
@@ -995,6 +1060,10 @@ router.get('/patient/videos', authenticateToken, async (req, res) => {
 router.post('/patient/appointments', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
+    // if (user.role !== 'patient') {
+    //   console.log('Unauthorized access to book appointment:', user.email);
+    //   return res.status(403).json({ message: 'Unauthorized' });
+    // }
     const { doctorId, date, time, reason } = req.body;
     const appointment = new Appointment({
       patientId: req.user.id,
@@ -1005,12 +1074,6 @@ router.post('/patient/appointments', authenticateToken, async (req, res) => {
     });
     await appointment.save();
     console.log(`Appointment created for patient ${user.email}`);
-    const patient = await User.findById(req.user.id).select('name');
-    pusher.trigger('notifications', 'new-appointment', {
-      id: appointment._id,
-      patientName: patient.name,
-      time: appointment.createdAt
-    });
     res.json({ message: 'Appointment booked', appointment });
   } catch (err) {
     console.error('Book appointment error:', err.message);
@@ -1022,6 +1085,10 @@ router.post('/patient/appointments', authenticateToken, async (req, res) => {
 router.get('/patient/appointments', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
+    // if (user.role !== 'patient') {
+    //   console.log('Unauthorized access to appointments:', user.email);
+    //   return res.status(403).json({ message: 'Unauthorized' });
+    // }
     const appointments = await Appointment.find({ patientId: req.user.id })
       .populate('doctorId', 'name')
       .sort({ createdAt: -1 });
@@ -1052,6 +1119,10 @@ router.post(
     console.log('Add video request:', { title, url });
     try {
       const user = await User.findById(req.user.id);
+      // if (user.role !== 'doctor') {
+      //   console.log('Unauthorized access to add video:', user.email);
+      //   return res.status(403).json({ message: 'Unauthorized' });
+      // }
       const video = new Video({
         title,
         url,
@@ -1059,11 +1130,6 @@ router.post(
       });
       await video.save();
       console.log('Video added:', { title });
-      pusher.trigger('notifications', 'new-video', {
-        id: video._id,
-        title,
-        time: new Date()
-      });
       res.status(201).json({ message: 'Video added successfully', video });
     } catch (err) {
       console.error('Add video error:', err.message);
@@ -1075,11 +1141,12 @@ router.post(
 // Create SOS alert
 router.post('/patient/sos', authenticateToken, async (req, res) => {
   try {
-    console.log('Starting SOS alert process for user:', req.user.id);
     const user = await User.findById(req.user.id);
-    console.log('User found:', user ? user.email : 'Not found');
+    // if (user.role !== 'patient') {
+    //   console.log('Unauthorized access to SOS:', user.email);
+    //   return res.status(403).json({ message: 'Unauthorized' });
+    // }
     const doctors = await User.find({ role: 'doctor' });
-    console.log('Doctors found:', doctors.length);
     if (doctors.length === 0) {
       console.log('No doctors found for SOS alert');
       return res.status(404).json({ message: 'No doctors available' });
@@ -1090,18 +1157,8 @@ router.post('/patient/sos', authenticateToken, async (req, res) => {
       status: 'active',
       createdAt: new Date()
     }));
-    console.log('SOS alerts to insert:', sosAlerts.length);
-    const insertedAlerts = await SosAlert.insertMany(sosAlerts);
-    console.log('SOS alerts inserted:', insertedAlerts.length);
-    console.log('Triggering Pusher for SOS alerts');
-    insertedAlerts.forEach(alert => {
-      pusher.trigger('notifications', 'new-sos-alert', {
-        id: alert._id,
-        patientName: user.name,
-        time: alert.createdAt
-      });
-    });
-    console.log('Pusher triggered successfully');
+    await SosAlert.insertMany(sosAlerts);
+    console.log(`SOS alert created for patient ${user.email} to ${doctors.length} doctors`);
     res.status(201).json({ message: 'SOS alert sent to all doctors' });
   } catch (err) {
     console.error('Create SOS error:', err.message);
@@ -1113,7 +1170,11 @@ router.post('/patient/sos', authenticateToken, async (req, res) => {
 router.get('/doctor/sos-alerts', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-  const alerts = await SosAlert.find({ doctorId: req.user.id, status: 'active' })
+    // if (user.role !== 'doctor') {
+    //   console.log('Unauthorized access to SOS alerts:', user.email);
+    //   return res.status(403).json({ message: 'Unauthorized' });
+    // }
+    const alerts = await SosAlert.find({ doctorId: req.user.id, status: 'active' })
       .populate('patientId', 'name email');
     console.log('SOS alerts fetched:', alerts.length);
     res.json(alerts);
@@ -1127,7 +1188,11 @@ router.get('/doctor/sos-alerts', authenticateToken, async (req, res) => {
 router.patch('/doctor/sos-alerts/:id', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-   const alert = await SosAlert.findById(req.params.id);
+    // if (user.role !== 'doctor') {
+    //   console.log('Unauthorized access to resolve SOS:', user.email);
+    //   return res.status(403).json({ message: 'Unauthorized' });
+    // }
+    const alert = await SosAlert.findById(req.params.id);
     if (!alert || alert.doctorId.toString() !== req.user.id) {
       console.log('SOS alert not found or unauthorized:', req.params.id);
       return res.status(404).json({ message: 'SOS alert not found' });
