@@ -9,7 +9,7 @@ const Appointment = require('../models/Appointment');
 const SosAlert = require('../models/SosAlert');
 const CaregiverPatient = require('../models/CaregiverPatient');
 const pusher = require('../config/pusher');
-
+const MedicalRecord = require('../models/MedicalRecord');
 const router = express.Router();
 
 const authenticateToken = (req, res, next) => {
@@ -1141,5 +1141,135 @@ router.patch('/doctor/sos-alerts/:id', authenticateToken, async (req, res) => {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
+
+
+router.post('/patient/medical-records', authenticateToken, async (req, res) => {
+  try {
+    // if (req.user.role !== 'patient') {
+    //   return res.status(403).json({ message: 'Access denied' });
+    // }
+    const { title, description, imageUrl, publicId } = req.body;
+    if (!title) {
+      return res.status(400).json({ message: 'Title is required' });
+    }
+    const medicalRecord = new MedicalRecord({
+      patientId: req.user.id,
+      title,
+      description,
+      imageUrl,
+      publicId,
+      timestamp: new Date()
+    });
+    await medicalRecord.save();
+    res.status(201).json({ message: 'Medical record saved' });
+  } catch (err) {
+    console.error('Error saving medical record:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get patient's medical records
+router.get('/patient/medical-records', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user || user.role !== 'patient') {
+      console.log('User not a patient:', req.user.id);
+      return res.status(403).json({ message: 'Only patients can view medical records' });
+    }
+
+    const records = await MedicalRecord.find({ patientId: req.user.id }).sort({ timestamp: -1 });
+    console.log('Medical records fetched:', records.length);
+    res.json(records);
+  } catch (err) {
+    console.error('Get medical records error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Clear all medical records for a patient
+router.delete('/patient/medical-records', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user || user.role !== 'patient') {
+      console.log('User not a patient:', req.user.id);
+      return res.status(403).json({ message: 'Only patients can clear medical records' });
+    }
+
+    const records = await MedicalRecord.find({ patientId: req.user.id });
+    const cloudinary = require('cloudinary').v2;
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET
+    });
+
+    // Delete images from Cloudinary
+    for (const record of records) {
+      if (record.publicId) {
+        await cloudinary.uploader.destroy(record.publicId);
+        console.log('Deleted Cloudinary image:', record.publicId);
+      }
+    }
+
+    // Delete records from MongoDB
+    await MedicalRecord.deleteMany({ patientId: req.user.id });
+    console.log('Medical records cleared:', { patientId: req.user.id });
+    res.json({ message: 'All medical records cleared successfully' });
+  } catch (err) {
+    console.error('Clear medical records error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+router.get('/doctor/patient/:id', authenticateToken, async (req, res) => {
+  try {
+    const patientId = req.params.id;
+
+    // Fetch patient data
+    const patient = await User.findById(patientId).select('name patientId condition age room');
+    if (!patient) {
+      return res.status(404).json({ message: 'Patient not found' });
+    }
+
+    // Fetch related data
+    //const vitalSigns = await VitalSigns.findOne({ patientId }).select('bloodPressure');
+    const medications = await Medication.find({ patientId }).select('name time taken');
+    const appointments = await Appointment.find({ patientId }).select('reason date time status');
+    const sosAlerts = await SosAlert.find({ patientId, status: 'active' }).select('createdAt');
+
+    res.json({
+      patient,
+      medications,
+      appointments,
+      sosAlerts
+    });
+  } catch (err) {
+    console.error('Error fetching patient data:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+// Get medical records for a specific patient (for doctors, to be used later)
+router.get('/doctor/patients/:id/medical-records', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user || user.role !== 'doctor') {
+      console.log('User not a doctor:', req.user.id);
+      return res.status(403).json({ message: 'Only doctors can view patient medical records' });
+    }
+
+    const patient = await User.findById(req.params.id);
+    if (!patient || patient.role !== 'patient') {
+      console.log('Patient not found:', req.params.id);
+      return res.status(404).json({ message: 'Patient not found' });
+    }
+
+    const records = await MedicalRecord.find({ patientId: req.params.id }).sort({ timestamp: -1 });
+    console.log('Medical records fetched for patient:', { patientId: req.params.id, count: records.length });
+    res.json(records);
+  } catch (err) {
+    console.error('Get patient medical records error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 
 module.exports = router;

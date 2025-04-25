@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALZO - Patient Details</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css" rel="stylesheet">
+    <script src="https://js.pusher.com/8.2/pusher.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#57B5E7',
+                        secondary: '#8DD3C7',
+                        card: '#F9FAFB'
+                    },
+                    borderRadius: {
+                        button: '8px',
+                        card: '12px'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Pacifico', 'cursive']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .card { background-color: #F9FAFB; border-radius: 12px; padding: 16px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+        #notificationDropdown::-webkit-scrollbar {
+            width: 6px;
+        }
+        #notificationDropdown::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        #notificationDropdown::-webkit-scrollbar-thumb {
+            background: #57B5E7;
+            border-radius: 3px;
+        }
+        #notificationDropdown::-webkit-scrollbar-thumb:hover {
+            background: #4a9fd5;
+        }
+        .animate-slide-down {
+            animation: slideDown 0.3s ease-out;
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-10%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        #medicalRecordsList, #medicationsList, #appointmentsList, #sosAlertsList {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        #medicalRecordsList::-webkit-scrollbar, #medicationsList::-webkit-scrollbar, #appointmentsList::-webkit-scrollbar, #sosAlertsList::-webkit-scrollbar {
+            width: 6px;
+        }
+        #medicalRecordsList::-webkit-scrollbar-track, #medicationsList::-webkit-scrollbar-track, #appointmentsList::-webkit-scrollbar-track, #sosAlertsList::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        #medicalRecordsList::-webkit-scrollbar-thumb, #medicationsList::-webkit-scrollbar-thumb, #appointmentsList::-webkit-scrollbar-thumb, #sosAlertsList::-webkit-scrollbar-thumb {
+            background: #57B5E7;
+            border-radius: 3px;
+        }
+        #medicalRecordsList::-webkit-scrollbar-thumb:hover, #medicationsList::-webkit-scrollbar-thumb:hover, #appointmentsList::-webkit-scrollbar-thumb:hover, #sosAlertsList::-webkit-scrollbar-thumb:hover {
+            background: #4a9fd5;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex">
+    <aside class="fixed top-0 left-0 w-64 h-full bg-white shadow-lg">
+        <div class="py-6 px-4">
+            <div class="text-2xl font-display text-primary mb-8">ALZO</div>
+            <nav class="space-y-4">
+                <a href="/doctor/doc.html" class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-dashboard-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Dashboard</span>
+                </a>
+                <a href="/doctor/doc.html#patientsSection" class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-primary bg-opacity-10 w-full text-left">
+                    <div class="w-10 h-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center">
+                        <i class="ri-user-line text-lg text-primary"></i>
+                    </div>
+                    <span class="text-sm text-primary font-medium">Patients</span>
+                </a>
+                <a href="/doctor/doc.html#appointmentsSection" class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-calendar-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Appointments</span>
+                </a>
+                <a href="/doctor/doc.html#medicationsSection" class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-medicine-bottle-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Medications</span>
+                </a>
+                <a href="/doctor/doc.html#videosSection" class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-video-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Videos</span>
+                </a>
+                <a href="/doctor/doc.html#profileSection" class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-user-settings-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Profile</span>
+                </a>
+                <button id="logoutButton" class="flex items-center space-x-3 px-4 py-3 rounded-lg w-full text-left">
+                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <i class="ri-logout-box-line text-lg text-gray-600"></i>
+                    </div>
+                    <span class="text-sm text-gray-600">Logout</span>
+                </button>
+            </nav>
+        </div>
+    </aside>
+
+    <div class="flex-1 ml-64 max-w-7xl mx-auto px-4 py-8">
+        <header class="py-4 flex items-center justify-between">
+            <h1 class="text-xl font-semibold">Patient Details</h1>
+            <div class="relative">
+                <button id="notificationButton" class="flex items-center space-x-2 px-3 py-2 bg-primary text-white rounded-button hover:bg-primary/90 relative">
+                    <i class="ri-notification-3-line"></i>
+                    <span id="notificationCount" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+                </button>
+                <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-80 bg-card rounded-card shadow-lg z-10 max-h-96 overflow-y-auto">
+                    <div class="p-4 border-b flex justify-between items-center">
+                        <h3 class="font-semibold text-gray-700">Notifications</h3>
+                        <button id="clearNotificationsButton" class="text-sm text-primary hover:underline">Clear All</button>
+                    </div>
+                    <div id="notificationList" class="divide-y"></div>
+                    <div class="p-4 text-center text-sm text-gray-500" id="noNotifications">No notifications</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="mb-8">
+            <h2 id="patientName" class="text-2xl font-semibold mb-2">Loading...</h2>
+            <p id="patientId" class="text-sm text-gray-600">ID: Loading...</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="card">
+                <h3 class="font-semibold mb-4">Patient Overview</h3>
+                <div class="flex items-center mb-4">
+                    <span id="patientCondition" class="px-3 py-1 text-sm rounded-full bg-gray-100 text-gray-700">Unknown</span>
+                </div>
+                <div class="flex justify-between text-sm mb-3">
+                    <span>Age</span>
+                    <span id="patientAge" class="font-medium">Unknown</span>
+                </div>
+                <div class="flex justify-between text-sm mb-3">
+                    <span>Room</span>
+                    <span id="patientRoom" class="font-medium">Unknown</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span>Blood Pressure</span>
+                    <span id="bloodPressure" class="font-medium">Unknown</span>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="font-semibold mb-4">Medical Records</h3>
+                <div id="medicalRecordsList" class="space-y-3">
+                    <p class="text-sm text-gray-500">Loading medical records...</p>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="font-semibold mb-4">Medications</h3>
+                <div id="medicationsList" class="space-y-3">
+                    <p class="text-sm text-gray-500">Loading medications...</p>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="font-semibold mb-4">Appointments</h3>
+                <div id="appointmentsList" class="space-y-3">
+                    <p class="text-sm text-gray-500">Loading appointments...</p>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="font-semibold mb-4">Active SOS Alerts</h3>
+                <div id="sosAlertsList" class="space-y-3">
+                    <p class="text-sm text-gray-500">Loading SOS alerts...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let patientData = null;
+        let notifications = [];
+        let currentUserEmail = null;
+
+        const notificationButton = document.getElementById('notificationButton');
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        const notificationList = document.getElementById('notificationList');
+        const notificationCount = document.getElementById('notificationCount');
+        const noNotifications = document.getElementById('noNotifications');
+
+        function loadNotificationsFromStorage(userEmail) {
+            const storedNotifications = localStorage.getItem(`notifications_${userEmail}`);
+            if (storedNotifications) {
+                notifications = JSON.parse(storedNotifications);
+                const now = new Date();
+                notifications = notifications.filter(n => {
+                    const notificationTime = new Date(n.time);
+                    return (now - notificationTime) / (1000 * 60 * 60 * 24) <= 7;
+                });
+                saveNotificationsToStorage(userEmail);
+                updateNotifications();
+            }
+        }
+
+        function saveNotificationsToStorage(userEmail) {
+            localStorage.setItem(`notifications_${userEmail}`, JSON.stringify(notifications));
+        }
+
+        function clearNotifications(userEmail) {
+            notifications = [];
+            localStorage.removeItem(`notifications_${userEmail}`);
+            updateNotifications();
+        }
+
+        function updateNotifications() {
+            if (notifications.length > 50) {
+                notifications = notifications.slice(-50);
+            }
+            notificationList.innerHTML = notifications.map(notification => `
+                <div class="p-4 flex items-center justify-between hover:bg-gray-50">
+                    <div class="flex items-center space-x-3">
+                        <i class="ri-${notification.type === 'SOS Alert' ? 'alarm-warning-line' : 'calendar-line'} text-primary"></i>
+                        <div>
+                            <p class="font-medium text-gray-700">${notification.type}</p>
+                            <p class="text-sm text-gray-500">${notification.message}</p>
+                            <p class="text-xs text-gray-400">${notification.time}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            noNotifications.classList.toggle('hidden', notifications.length > 0);
+            notificationCount.textContent = notifications.length;
+            notificationCount.classList.toggle('hidden', notifications.length === 0);
+        }
+
+        const pusher = new Pusher('84b6c0b1f09f713d3ba7', {
+            cluster: 'ap2'
+        });
+        const channel = pusher.subscribe('notifications');
+
+        channel.bind('new-sos-alert', function(data) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const patientId = urlParams.get('patientId');
+            if (data.patientId === patientId) {
+                notifications.push({
+                    id: data.id,
+                    type: 'SOS Alert',
+                    message: `New SOS Alert from ${data.patientName}`,
+                    time: new Date(data.time).toLocaleString()
+                });
+                updateNotifications();
+                saveNotificationsToStorage(currentUserEmail);
+                loadPatientData();
+            }
+        });
+
+        channel.bind('new-appointment', function(data) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const patientId = urlParams.get('patientId');
+            if (data.patientId === patientId) {
+                notifications.push({
+                    id: data.id,
+                    type: 'Appointment',
+                    message: `New Appointment with ${data.patientName}`,
+                    time: new Date(data.time).toLocaleString()
+                });
+                updateNotifications();
+                saveNotificationsToStorage(currentUserEmail);
+                loadPatientData();
+            }
+        });
+
+        notificationButton.addEventListener('click', () => {
+            notificationDropdown.classList.toggle('hidden');
+            if (!notificationDropdown.classList.contains('hidden')) {
+                notificationDropdown.classList.add('animate-slide-down');
+                setTimeout(() => notificationDropdown.classList.remove('animate-slide-down'), 300);
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!notificationButton.contains(e.target) && !notificationDropdown.contains(e.target)) {
+                notificationDropdown.classList.add('hidden');
+            }
+        });
+
+        document.getElementById('clearNotificationsButton').addEventListener('click', () => {
+            if (currentUserEmail) {
+                clearNotifications(currentUserEmail);
+            }
+        });
+
+        async function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.log('No token found, redirecting to /login');
+                window.location.href = '/login';
+                return null;
+            }
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Auth error:', errorData.message);
+                    throw new Error(errorData.message || 'Authentication failed');
+                }
+                const data = await response.json();
+                if (data.role !== 'doctor') {
+                    console.log('Role is not doctor, redirecting to /role:', data.role);
+                    window.location.href = '/role';
+                    return null;
+                }
+                currentUserEmail = data.email;
+                loadNotificationsFromStorage(data.email);
+                return data;
+            } catch (err) {
+                console.error('Auth error:', err.message);
+                localStorage.removeItem('token');
+                window.location.href = '/login';
+                return null;
+            }
+        }
+
+        async function resolveSosAlert(alertId) {
+            const feedback = document.createElement('div');
+            feedback.className = 'text-center text-sm mb-4';
+            document.getElementById('sosAlertsList').prepend(feedback);
+            try {
+                const response = await fetch(`/api/auth/doctor/sos-alerts/${alertId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to resolve SOS alert');
+                }
+                feedback.textContent = 'SOS alert resolved!';
+                feedback.className = 'text-center text-sm mb-4 text-green-500';
+                setTimeout(() => feedback.remove(), 3000);
+                loadPatientData();
+            } catch (err) {
+                console.error('Resolve SOS alert error:', err.message);
+                feedback.textContent = err.message || 'Failed to resolve SOS alert.';
+                feedback.className = 'text-center text-sm mb-4 text-red-500';
+                setTimeout(() => feedback.remove(), 3000);
+            }
+        }
+
+        async function updateAppointment(appointmentId, status) {
+            try {
+                const response = await fetch(`/api/auth/doctor/appointments/${appointmentId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({ status })
+                });
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to update appointment');
+                }
+                loadPatientData();
+            } catch (err) {
+                console.error('Update appointment error:', err.message);
+                alert(err.message || 'Failed to update appointment.');
+            }
+        }
+
+        async function loadPatientData() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const patientId = urlParams.get('patientId');
+            if (!patientId) {
+                alert('No patient ID provided');
+                window.location.href = '/doctor/doc.html';
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                const [patientResponse, medicalRecordsResponse] = await Promise.all([
+                    fetch(`/api/auth/doctor/patient/${patientId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    }),
+                    fetch(`/api/auth/doctor/patients/${patientId}/medical-records`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                ]);
+
+                if (!patientResponse.ok) {
+                    const errorData = await patientResponse.json();
+                    throw new Error(errorData.message || 'Failed to fetch patient data');
+                }
+                if (!medicalRecordsResponse.ok) {
+                    const errorData = await medicalRecordsResponse.json();
+                    throw new Error(errorData.message || 'Failed to fetch medical records');
+                }
+
+                patientData = await patientResponse.json();
+                patientData.medicalRecords = await medicalRecordsResponse.json();
+                console.log('Patient data fetched:', patientData);
+                updatePatientDetails();
+            } catch (err) {
+                console.error('Load patient data error:', err.message);
+                alert(err.message || 'Failed to load patient data.');
+                window.location.href = '/doctor/doc.html';
+            }
+        }
+
+        function updatePatientDetails() {
+            const { patient, vitalSigns, medications, appointments, sosAlerts, medicalRecords } = patientData;
+
+            document.getElementById('patientName').textContent = patient.name || 'Unknown';
+            document.getElementById('patientId').textContent = `ID: ${patient.patientId || 'Unknown'}`;
+            document.getElementById('patientCondition').textContent = patient.condition || 'Unknown';
+            document.getElementById('patientCondition').className = `px-3 py-1 text-sm rounded-full ${
+                patient.condition === 'Stable' ? 'bg-green-100 text-green-700' :
+                patient.condition === 'Critical' ? 'bg-red-100 text-red-700' :
+                patient.condition === 'Recovering' ? 'bg-blue-100 text-blue-700' :
+                'bg-yellow-100 text-yellow-700'
+            }`;
+            document.getElementById('patientAge').textContent = patient.age || '48';
+            document.getElementById('patientRoom').textContent = patient.room || '402';
+            document.getElementById('bloodPressure').textContent = vitalSigns?.bloodPressure || '80/120';
+
+            const medicalRecordsList = document.getElementById('medicalRecordsList');
+            medicalRecordsList.innerHTML = medicalRecords.length > 0 ? medicalRecords.map(record => `
+                <div class="p-3 bg-gray-50 rounded-lg">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                            <i class="ri-file-text-line text-blue-500"></i>
+                        </div>
+                        <div class="ml-3 flex-1">
+                            <p class="text-sm font-medium">${record.title || 'Untitled'}</p>
+                            <p class="text-xs text-gray-500">${record.description || '-'}</p>
+                           ${record.imageUrl ? 
+    `<a href="${record.imageUrl}" target="_blank" class="text-primary hover:underline">${record.imageUrl.split('/').pop()}</a>` : 
+    'No Image'}
+                            <p class="text-xs text-gray-400 mt-1">${new Date(record.timestamp).toLocaleString()}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('') : '<p class="text-sm text-gray-500">No medical records available</p>';
+
+            const medicationsList = document.getElementById('medicationsList');
+            medicationsList.innerHTML = medications.length > 0 ? medications.map(med => `
+                <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                        <i class="ri-capsule-line text-blue-500"></i>
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <p class="text-sm font-medium">${med.name || 'Unknown'}</p>
+                        <p class="text-xs text-gray-500">Time: ${med.time || 'Unknown'}</p>
+                    </div>
+                    <span class="px-3 py-1 text-sm rounded-full ${
+                        med.taken ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                    }">${med.taken ? 'Taken' : 'Pending'}</span>
+                </div>
+            `).join('') : '<p class="text-sm text-gray-500">No medications available</p>';
+
+            const appointmentsList = document.getElementById('appointmentsList');
+            appointmentsList.innerHTML = appointments.length > 0 ? appointments.map(appointment => `
+                <div class="p-3 bg-gray-50 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                <i class="ri-calendar-line text-blue-500"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm font-medium">${appointment.reason || 'No reason provided'}</p>
+                                <p class="text-xs text-gray-500">${new Date(appointment.date).toLocaleDateString()} at ${appointment.time || 'Unknown'}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="px-3 py-1 text-sm rounded-full ${
+                                appointment.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                appointment.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                'bg-yellow-100 text-yellow-700'
+                            }">${appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}</span>
+                            ${appointment.status === 'pending' ? `
+                                <button onclick="updateAppointment('${appointment._id}', 'approved')" class="px-2 py-1 text-xs bg-green-500 text-white rounded-button">Approve</button>
+                                <button onclick="updateAppointment('${appointment._id}', 'rejected')" class="px-2 py-1 text-xs bg-red-500 text-white rounded-button">Reject</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('') : '<p class="text-sm text-gray-500">No appointments available</p>';
+
+            const sosAlertsList = document.getElementById('sosAlertsList');
+            sosAlertsList.innerHTML = sosAlerts.length > 0 ? sosAlerts.map(alert => `
+                <div class="p-3 bg-gray-50 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                                <i class="ri-alarm-warning-line text-red-500"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm font-medium">SOS Alert</p>
+                                <p class="text-xs text-gray-500">${new Date(alert.createdAt).toLocaleString()}</p>
+                            </div>
+                        </div>
+                        <button onclick="resolveSosAlert('${alert._id}')" class="px-3 py-1 text-sm bg-primary text-white rounded-button">Resolve</button>
+                    </div>
+                </div>
+            `).join('') : '<p class="text-sm text-gray-500">No active SOS alerts</p>';
+        }
+
+        function handleLogout() {
+            console.log('Logging out');
+            if (currentUserEmail) {
+                clearNotifications(currentUserEmail);
+            }
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('DOM loaded, loading patient details');
+            await checkAuth();
+            await loadPatientData();
+            document.getElementById('logoutButton').addEventListener('click', handleLogout);
+        });
+    </script>
+</body>
+</html>

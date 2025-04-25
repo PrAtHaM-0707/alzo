@@ -347,8 +347,7 @@
                         <input type="text" id="profileName" name="name" class="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary" required />
                     </div>
                     <div class="mb-4">
-                        <label for="profileEmail" class="block text-gray-7
-                        00 font-medium mb-2 text-sm">Email</label>
+                        <label for="profileEmail" class="block text-gray-700 font-medium mb-2 text-sm">Email</label>
                         <input type="email" id="profileEmail" name="email" class="w-full px-4 py-3 rounded-md border border-gray-300 bg-gray-100 disabled-input" readonly />
                     </div>
                     <div class="mb-4">
@@ -383,7 +382,6 @@
         const notificationCount = document.getElementById('notificationCount');
         const noNotifications = document.getElementById('noNotifications');
 
-    
         function loadNotificationsFromStorage(userEmail) {
             const storedNotifications = localStorage.getItem(`notifications_${userEmail}`);
             if (storedNotifications) {
@@ -391,19 +389,17 @@
                 const now = new Date();
                 notifications = notifications.filter(n => {
                     const notificationTime = new Date(n.time);
-                    return (now - notificationTime) / (1000 * 60 * 60 * 24) <= 7; 
+                    return (now - notificationTime) / (1000 * 60 * 60 * 24) <= 7;
                 });
                 saveNotificationsToStorage(userEmail);
                 updateNotifications();
             }
         }
 
-      
         function saveNotificationsToStorage(userEmail) {
             localStorage.setItem(`notifications_${userEmail}`, JSON.stringify(notifications));
         }
 
-       
         function clearNotifications(userEmail) {
             notifications = [];
             localStorage.removeItem(`notifications_${userEmail}`);
@@ -441,7 +437,7 @@
 
         function updateNotifications() {
             if (notifications.length > 50) {
-                notifications = notifications.slice(-50); 
+                notifications = notifications.slice(-50);
             }
             notificationList.innerHTML = notifications.map(notification => `
                 <div class="p-4 flex items-center justify-between hover:bg-gray-50">
@@ -460,7 +456,6 @@
             notificationCount.classList.toggle('hidden', notifications.length === 0);
         }
 
-      
         let currentUserEmail = null;
         function getCurrentUserEmail() {
             return currentUserEmail;
@@ -905,7 +900,7 @@
                         <div class="flex items-center">
                             <img src="https://public.readdy.ai/ai/img_res/1682c0c2b428f4c0962dbe4c89152a00.jpg" class="w-10 h-10 rounded-full object-cover">
                             <div class="ml-3">
-                                <p class="font-medium">${patient.name}</p>
+                                <a href="/doctor/patient-details.html?patientId=${patient._id}" class="font-medium text-primary hover:underline">${patient.name}</a>
                                 <p class="text-sm text-gray-500">ID: ${patient.patientId}</p>
                             </div>
                         </div>
