@@ -168,7 +168,7 @@ router.post('/select-role', authenticateToken, [
       if (req.body.role === 'patient') {
           user.condition = req.body.condition || 'Stable';
           if (!user.patientId) {
-              user.patientId = nanoid(); // Assign patientId using nanoid
+              user.patientId = nanoid(); 
           }
       } else if (req.body.role === 'doctor') {
           user.specialty = req.body.specialty;
@@ -197,7 +197,37 @@ router.post('/select-role', authenticateToken, [
       res.status(500).json({ message: 'Server error', error: err.message });
   }
 });
+router.get('/caregiver/patients/:patientId/medical-records', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user || user.role !== 'caregiver') {
+      console.log('User not a caregiver:', req.user.id);
+      return res.status(403).json({ message: 'Only caregivers can view patient medical records' });
+    }
 
+    const patient = await User.findOne({ patientId: req.params.patientId, role: 'patient' });
+    if (!patient) {
+      console.log('Patient not found:', req.params.patientId);
+      return res.status(404).json({ message: 'Patient not found' });
+    }
+
+    const association = await CaregiverPatient.findOne({
+      caregiverId: req.user.id,
+      patientId: patient._id
+    });
+    if (!association) {
+      console.log('Patient not associated with caregiver:', req.params.patientId);
+      return res.status(403).json({ message: 'You are not managing this patient' });
+    }
+
+    const records = await MedicalRecord.find({ patientId: patient._id }).sort({ timestamp: -1 });
+    console.log('Medical records fetched for patient:', { patientId: req.params.patientId, count: records.length });
+    res.json(records);
+  } catch (err) {
+    console.error('Get patient medical records error:', err.message);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
 // Update patient condition
 router.patch('/doctor/patients/:id/condition', authenticateToken, async (req, res) => {
   try {
